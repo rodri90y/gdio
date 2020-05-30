@@ -1,0 +1,25 @@
+package:
+  name: gdio
+  version: 0.0.1
+
+source:
+  git_rev:
+  git_url:
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+
+test:
+  imports:
+    -
+
+about:
+  home:
+  license: MIT
+  license_family: MIT
+  summary: gridded data io library
