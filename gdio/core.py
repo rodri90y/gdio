@@ -298,7 +298,7 @@ class gdio(object):
             if data:
                 self.dataset.append(data)
         else:
-            return list(data)
+            return data
 
     def sel(self,
             latitude=None,

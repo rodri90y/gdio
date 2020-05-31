@@ -83,7 +83,7 @@ ds.mload(['tests/data/era5_20191226-27_lev.grib', 'tests/data/era5_20191227_lev.
 
 
 ## Meta
-Rodrigo Yamamoto gdio@rodrigoyamamoto.com
+Rodrigo Yamamoto codes@rodrigoyamamoto.com
 
 https://github.com/rodri90y/gdio
 

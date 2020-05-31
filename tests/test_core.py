@@ -81,39 +81,3 @@ if __name__ == '__main__':
     pass
 
 
-
-
-
-
-# ds = gdio(verbose=False)
-# ds.mload([
-#     # 'data/era5_20191228_lev.grib',
-#     'data/era5_20191226-27_lev.grib',
-#     'data/era5_20191227_lev.nc',
-#     #     'data/era_2019_month_hour.grib'
-#     # 'data/gfs.grb'
-# ],
-# # vars=['u'],
-#          merge_files=True,
-#          uniformize_grid=True,
-#          cut_domain=(-30,300,10,320),
-#          # cut_time=(12, 36),
-#          inplace=True)
-# import matplotlib.pyplot as plt
-# import numpy as np
-# print('hello nurse ...............')
-# k=0
-# print('test open',(not ds.dataset is []))
-# print(ds.dataset[k].keys())
-# print(ds.dataset[k]['u'].shape)
-# print('ref_time', ds.dataset[k]['ref_time'])
-# print('time', ds.dataset[k]['time'])
-# print(near_yx({'latitude': ds.dataset[k].get('latitude'),
-#                                   'longitude': ds.dataset[k].get('longitude')},
-#                                 lats=-23.54, lons=-46.64))
-# x=ds.sel(dates=[datetime(2019,12,26,12,0)],latitude=[-23.54,-22],longitude=[-46.64,-42.2], level=[2,6])
-# for _,xx in enumerate(x):
-    # print(xx['u'])
-# print(x[0]['u'].shape)
-
-
