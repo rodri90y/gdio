@@ -1,13 +1,25 @@
+import os, sys
 import unittest
 import numpy as np
-import logging
-
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from gdio.core import gdio
 from gdio.commons import near_yx
 from datetime import datetime
 
 class TestNcFiles(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(self):
+
+        self.ds = gdio(verbose=False)
+
+        self.ds.mload(['data/era5_20191226-27_lev.grib','data/era5_20191227_lev.nc'],
+                      merge_files=True,
+                      uniformize_grid=True,
+                      cut_domain=(-30, 300, 10, 320),
+                      cut_time=(12, 36),
+                      inplace=True
+                      )
 
     def setUp(self):
 
@@ -17,37 +29,29 @@ class TestNcFiles(unittest.TestCase):
         self.expected_coordinate = ([26], [53])
         self.expected_variables = ['ref_time', 'time_unit', 'time', 'latitude', 'longitude', 't', 'u', 'v', 'r', 'level']
         self.expected_corrcoef = 0.94
-        self.ds = gdio(verbose=False)
-
-        self.ds.mload(['data/era5_20191226-27_lev.grib', 'data/era5_20191227_lev.nc'],
-                   merge_files=True,
-                   uniformize_grid=True,
-                   cut_domain=(-30, 300, 10, 320),
-                   cut_time=(12, 36),
-                   inplace=True
-                  )
+        self.expected_sel = (1, 4, 6, 18)
 
 
-    def test_open_grib(self):
-        self.assertTrue(not self.gbr is {})
+    def test_open_multiples_files(self):
+        self.assertTrue(not self.ds.dataset is [])
 
-    def test_grib_variables_test(self):
+    def test_grid_variables_test(self):
 
         self.assertEqual(list(self.ds.dataset[0].keys()), self.expected_variables,
                          'incorrect number of variables')
 
-    def test_grib_varible_dimension(self):
+    def test_grid_varible_dimension(self):
 
         self.assertEqual(self.ds.dataset[0].get('u').shape, self.expected_dim,
                          'dimension shape of u variable incorrect')
 
-    def test_grib_cut_time(self):
+    def test_grid_cut_time(self):
 
         self.assertListEqual(list(self.ds.dataset[0].get('time')), self.expected_times,
                          'incorrect time cut')
 
 
-    def test_grib_interpolation(self):
+    def test_grid_interpolation(self):
 
         a = self.ds.dataset[0].get('u')[2, 0].flatten()
         b = self.ds.dataset[0].get('u')[3, 0].flatten()
@@ -57,13 +61,20 @@ class TestNcFiles(unittest.TestCase):
         self.assertTrue(corrcoef > self.expected_corrcoef,
                          'incorrect interpolation (corrcoef={0:0.4f})'.format(corrcoef))
 
-    def test_grib_cut_space(self):
+    def test_grid_cut_space(self):
 
         self.assertEqual(near_yx({'latitude': self.ds.dataset[0].get('latitude'),
                                   'longitude': self.ds.dataset[0].get('longitude')},
                                 lats=-23.54, lons=-46.64), self.expected_coordinate,
                          'problem with the spatial dimension')
 
+    def test_grid_select_coords(self):
+
+        sub_set = self.ds.sel(dates=[datetime(2019,12,26,12,0)],
+                              latitude=[-23.54,-22], longitude=[-46.64,-42.2], level=[2,6])
+
+        self.assertEqual(sub_set[0]['u'].shape, self.expected_sel,
+                         'dimension shape of u variable incorrect')
 
 if __name__ == '__main__':
     unittest.main()
@@ -71,5 +82,38 @@ if __name__ == '__main__':
 
 
 
+
+
+
+# ds = gdio(verbose=False)
+# ds.mload([
+#     # 'data/era5_20191228_lev.grib',
+#     'data/era5_20191226-27_lev.grib',
+#     'data/era5_20191227_lev.nc',
+#     #     'data/era_2019_month_hour.grib'
+#     # 'data/gfs.grb'
+# ],
+# # vars=['u'],
+#          merge_files=True,
+#          uniformize_grid=True,
+#          cut_domain=(-30,300,10,320),
+#          # cut_time=(12, 36),
+#          inplace=True)
+# import matplotlib.pyplot as plt
+# import numpy as np
+# print('hello nurse ...............')
+# k=0
+# print('test open',(not ds.dataset is []))
+# print(ds.dataset[k].keys())
+# print(ds.dataset[k]['u'].shape)
+# print('ref_time', ds.dataset[k]['ref_time'])
+# print('time', ds.dataset[k]['time'])
+# print(near_yx({'latitude': ds.dataset[k].get('latitude'),
+#                                   'longitude': ds.dataset[k].get('longitude')},
+#                                 lats=-23.54, lons=-46.64))
+# x=ds.sel(dates=[datetime(2019,12,26,12,0)],latitude=[-23.54,-22],longitude=[-46.64,-42.2], level=[2,6])
+# for _,xx in enumerate(x):
+    # print(xx['u'])
+# print(x[0]['u'].shape)
 
 

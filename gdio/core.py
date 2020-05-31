@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 # Yamamoto, Rodrigo @ 2019.Jan
-# public MIT
+# version 0.0.2
+# MIT
 
 
-import sys, os, copy
+import os, copy
 
 import numpy as np
 import numpy.ma as ma
@@ -306,15 +307,24 @@ class gdio(object):
             level=None,
             date_format='%Y-%m-%d %H:%M'):
         '''
-        Select data
+        Select data by coordinates (date, latitude, longitude and levels)
+
         :param latitude:     list of floats
                              latitudes
+                             range of latitudes to select: [lat1, lat2]
+                             especific latitudes (1 or >2) [lat1, lat2, lat3, ...]
         :param longitude:    list of floats
-                             longitudes
+                             range of longitudes to select: [lon1, lon2]
+                             especific longitudes (1 or >2) [lon1, lon2, lon3, ...]
         :param dates:        list of floats
-                             dates
+                             datetime/string date
+                             range of dates to select: [date1, date2]
+                             especific dates (1 or >2) [date1, date2, date3, ...]
         :param level:        list of floats
-                             level
+                             range of levels to select: [level1, level2]
+                             especific levels (1 or >2) [level1, level2, level3, ...]
+
+        return               dict
         '''
 
         __data = copy.deepcopy(self.dataset)
@@ -338,6 +348,7 @@ class gdio(object):
                 elif len(dates) > 0:
                     t = np.isin(_dat['time'], dates)
 
+
             # select spatial subdomain
             if longitude or latitude:
                 y, x = near_yx(_dat, lats=latitude, lons=longitude)
@@ -347,7 +358,7 @@ class gdio(object):
 
                 if isinstance(v, np.ndarray):
 
-                    if k in ['latitude']:
+                    if k in ['latitude']:                       # latitude coordinate
 
                         if y:
                             if len(y) == 2:
@@ -355,7 +366,7 @@ class gdio(object):
                             else:
                                 _dat[k] = _dat[k][y]
 
-                    elif k in ['longitude']:
+                    elif k in ['longitude']:                    # longitude coordinate
 
                         if x:
                             if len(x) == 2:
@@ -363,25 +374,25 @@ class gdio(object):
                             else:
                                 _dat[k] = _dat[k][x]
 
-                    elif k in ['time']:
+                    elif k in ['time']:                         # time coordinate
 
                         if dates:
                             _dat[k] = _dat[k][t]
 
-                    elif k in ['level']:
+                    elif k in ['level']:                        # level coordinate
                         if z:
                             if len(z) == 2:
                                 _dat[k] = _dat[k][z[0]:z[1]]
                             else:
                                 _dat[k] = _dat[k][z]
 
-                    elif not k in ['ref_time']:
+                    elif not k in ['ref_time']:                 # variables (non coordinates)
 
                         # cut longitude
                         if x:
                             if len(x) == 2:
                                 _dat[k] = _dat[k][:, :, :, x[0]:x[1]]
-                            if len(x) == 1:
+                            elif len(x) == 1:
                                 _dat[k] = _dat[k][:, :, :, x[0]]
                             else:
                                 _dat[k] = _dat[k][:, :, :, x]
@@ -390,7 +401,7 @@ class gdio(object):
                         if y:
                             if len(y) == 2:
                                 _dat[k] = _dat[k][:, :, y[0]:y[1]]
-                            if len(y) == 1:
+                            elif len(y) == 1:
                                 _dat[k] = _dat[k][:, :, y[0]]
                             else:
                                 _dat[k] = _dat[k][:, :, y]
@@ -407,15 +418,16 @@ class gdio(object):
                                     # cut time
                         if dates:
                             _dat[k] = _dat[k][t]
-                else:
-                    _dat.update({k: v})
+
+                    else:
+                        _dat.update({k: v})
 
         return __data
 
 
     def remapbil(self, data, lon, lat, lon_new, lat_new, order=1, masked=False):
         '''
-        Interpolar grid para resolucao
+        Interpolate data to new domain resolution
         :param data:    array
                         3D data (time,lon,lat)
         :param lon:     array

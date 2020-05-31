@@ -1,3 +1,7 @@
+# Yamamoto, Rodrigo @ 2019.Jan
+# version 0.0.2
+# MIT
+
 import re
 import numpy as np
 from netCDF4 import Dataset

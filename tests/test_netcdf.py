@@ -1,11 +1,19 @@
+import os, sys
 import unittest
-
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from gdio.netcdf import netcdf
 from gdio.commons import near_yx
 
 
 class TestNcFiles(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(self):
+
+        nc = netcdf()
+        self.nc = nc.nc_load('data/era5_20191227_lev.nc',
+                             cut_domain=(-30, -60, 10, -40),
+                             cut_time=(12, 24))
 
     def setUp(self):
 
@@ -13,10 +21,7 @@ class TestNcFiles(unittest.TestCase):
         self.expected_times = [12]
         self.expected_coordinate = ([13], [27])
 
-        nc = netcdf()
-        self.nc = nc.nc_load('data/era5_20191227_lev.nc',
-                               cut_domain=(-30,300,10,320),
-                               cut_time=(12, 24))
+
 
     def test_open_netcdf(self):
         self.assertTrue(not self.nc is {})

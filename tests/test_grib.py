@@ -1,10 +1,19 @@
+import os, sys
 import unittest
-
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from gdio.grib import grib
 from gdio.commons import near_yx
 
 
 class TestGribFiles(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+
+        gr = grib(verbose=False)
+        self.gbr = gr.gb_load('data/era5_20191226-27_lev.grib',
+                              cut_domain=(-30, 300, 10, 320),
+                              cut_time=(12, 24))
 
 
     def setUp(self):
@@ -14,10 +23,6 @@ class TestGribFiles(unittest.TestCase):
         self.expected_times = [12, 24]
         self.expected_coordinate = ([26], [53])
 
-        gr = grib(verbose=False)
-        self.gbr = gr.gb_load('data/era5_20191226-27_lev.grib',
-                                   cut_domain=(-30,300,10,320),
-                                   cut_time=(12, 24))
 
     def test_open_grib(self):
 

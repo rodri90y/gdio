@@ -1,3 +1,7 @@
+# Yamamoto, Rodrigo @ 2019.Jan
+# version 0.0.2
+# MIT
+
 import numpy as np
 import pygrib
 import logging
