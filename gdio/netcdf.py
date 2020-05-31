@@ -1,6 +1,12 @@
-# Yamamoto, Rodrigo @ 2019.Jan
-# version 0.0.2
-# MIT
+__author__ = "Rodrigo Yamamoto"
+__date__ = "2019.Jan"
+__credits__ = ["Carlos Oliveira, Igor"]
+__maintainer__ = "Rodrigo Yamamoto"
+__email__ = "codes@rodrigoyamamoto.com"
+__version__ = "version 0.0.3"
+__license__ = "MIT"
+__status__ = "development"
+__description__ = "A netcdf file IO library"
 
 import re
 import numpy as np

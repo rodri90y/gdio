@@ -1,9 +1,12 @@
-#!/usr/bin/env python
-# coding: utf-8
-# Yamamoto, Rodrigo @ 2019.Jan
-# version 0.0.2
-# MIT
-
+__author__ = "Rodrigo Yamamoto"
+__date__ = "2019.Jan"
+__credits__ = ["Carlos Oliveira, Igor"]
+__maintainer__ = "Rodrigo Yamamoto"
+__email__ = "codes@rodrigoyamamoto.com"
+__version__ = "version 0.0.3"
+__license__ = "MIT"
+__status__ = "development"
+__description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
 
 import os, copy
 
@@ -59,7 +62,7 @@ class gdio(object):
 
     def thread(self, ifile, vars=None, cut_time=None, cut_domain=None, level_type=None):
         '''
-        Funcao de leitura e corte de netcdf
+        Load and cutting function
         :param conf:                list
                                     filename e index
         :param vars:                list

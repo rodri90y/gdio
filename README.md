@@ -1,7 +1,7 @@
 
 # GDIO - Gridded Data IO
 
-A simple and concise gridded data IO library to read multiples grib and netcdf files, automatic spatial interpolation of the all data to a single resolution.
+A simple and concise gridded data IO library for reading multiples grib and netcdf files, automatic spatial interpolation of the all data to a single resolution.
 
 The library gdio is based on my own professionals and personal needs as a meteorologist. The commons libraries always fail when you need to read handle multiples large netcdf/grib files, with differents resolutions and timesteps.
 ## Instalation
