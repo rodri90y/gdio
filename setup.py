@@ -17,5 +17,5 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-    install_requires=['numpy >= 1.18.4','netCDF4 >= 1.5.1.2','pygrib >= 2.0.4','texttable >= 1.6.2'],
+    install_requires=['numpy','netCDF4','pygrib','texttable'],
 )
