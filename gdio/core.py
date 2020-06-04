@@ -1,6 +1,6 @@
 __author__ = "Rodrigo Yamamoto"
 __date__ = "2019.Jan"
-__credits__ = ["Carlos Oliveira, Igor"]
+__credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
 __version__ = "version 0.0.5"
@@ -31,8 +31,7 @@ class gdio(object):
 
     def __init__(self,
                  verbose=False,
-                 remap_n_processes=2,
-                 latlons=None):
+                 remap_n_processes=2):
 
         self.verbose = verbose
         self.remap_n_processes = remap_n_processes
