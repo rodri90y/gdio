@@ -13,3 +13,5 @@ pip-delete-this-directory.txt
 
 
 gdio.egg-info*
+built
+dist

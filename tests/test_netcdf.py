@@ -11,7 +11,11 @@ class TestNcFiles(unittest.TestCase):
     def setUpClass(self):
 
         nc = netcdf()
-        self.nc = nc.nc_load('data/era5_20191227_lev.nc',
+
+        path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
+                            'data/era5_20191227_lev.nc')
+
+        self.nc = nc.nc_load(path,
                              cut_domain=(-30, -60, 10, -40),
                              cut_time=(12, 24))
 

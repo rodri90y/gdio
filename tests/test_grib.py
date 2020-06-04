@@ -11,7 +11,12 @@ class TestGribFiles(unittest.TestCase):
     def setUpClass(self):
 
         gr = grib(verbose=False)
-        self.gbr = gr.gb_load('data/era5_20191226-27_lev.grib',
+
+        path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
+                            'data/era5_20191226-27_lev.grib')
+
+
+        self.gbr = gr.gb_load(path,
                               cut_domain=(-30, 300, 10, 320),
                               cut_time=(12, 24))
 

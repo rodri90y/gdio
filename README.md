@@ -6,10 +6,13 @@ A simple and concise gridded data IO library for reading multiples grib and netc
 The library gdio is based on my own professionals and personal needs as a meteorologist. The commons libraries always fail when you need to read handle multiples large netcdf/grib files, with differents resolutions and timesteps.
 ## Instalation
 ```
+conda config --env --add channels conda-forge
 conda install gdio
 ```
 
 #### Required dependencies
+
+conda config --add channels conda-forge
 
 + Python (3.6 or later)
 + numpy (1.18.4 or later)

@@ -3,7 +3,7 @@ __date__ = "2019.Jan"
 __credits__ = ["Carlos Oliveira, Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.0.3"
+__version__ = "version 0.0.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -304,6 +304,7 @@ class gdio(object):
             return data
 
     def sel(self,
+            __data=None,
             latitude=None,
             longitude=None,
             dates=None,
@@ -312,6 +313,8 @@ class gdio(object):
         '''
         Select data by coordinates (date, latitude, longitude and levels)
 
+        :param __data:       list of dictionaries
+                             raw dataset
         :param latitude:     list of floats
                              latitudes
                              range of latitudes to select: [lat1, lat2]
@@ -330,7 +333,8 @@ class gdio(object):
         return               dict
         '''
 
-        __data = copy.deepcopy(self.dataset)
+        if __data is None:
+            __data = copy.deepcopy(self.dataset)
 
         for _dat in __data:
 
