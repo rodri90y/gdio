@@ -3,7 +3,7 @@ __date__ = "2019.Jan"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.0.6"
+__version__ = "version 0.0.7"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -30,7 +30,7 @@ class netcdf(object):
         self.__fields_latitude = ['latitude', 'lat', 'xlat', 'LATITUDE']
         self.__fields_longitude = ['longitude', 'lon', 'xlon', 'LONGITUDE']
         self.__fields_time = ['time', 'TIME']
-        self.__fields_level = ['level', 'lev', 'LEVEL', 'levels', 'LEVELS']
+        self.__fields_level = ['level', 'lev', 'LEVEL', 'levels', 'LEVELS', 'mdllevel', 'presmdl']
 
         self.level = None
         self.lon = None
@@ -79,21 +79,21 @@ class netcdf(object):
                 self.coordinates.append('time')
                 self.time_units = _nc.variables[key].units
                 self.time = _nc.variables[key][:].astype(int)
+
+            elif key in self.__fields_longitude:
+                self.coordinates.append('longitude')
+                # convert from -180,180 to 360 format
+                self.lon = (_nc.variables[key][:] + 360) % 360
+
             elif key in self.__fields_latitude:
                 self.coordinates.append('latitude')
                 self.lat = _nc.variables[key][:]
-
-                # convert from -180,180 to 360 format
-                self.lon = (self.lon + 360) % 360
 
                 flip_lat = self.lat[-1] < self.lat[0]
 
                 if flip_lat:
                     self.lat = np.flip(self.lat, axis=0)
 
-            elif key in self.__fields_longitude:
-                self.coordinates.append('longitude')
-                self.lon = _nc.variables[key][:]
             elif key in self.__fields_level:
                 self.coordinates.append('level')
                 self.level = _nc.variables[key][:]
@@ -162,9 +162,9 @@ class netcdf(object):
 
                 # redim the data array ...........
                 if _data.ndim == 2:
-                    _data = _data[None,None,:,:,:]
+                    _data = _data[None,:,:,:]
                 elif _data.ndim == 3:
-                    _data = _data[None,:,:,:,:]
+                    _data = _data[None,:,:,:]
 
                 # flip latitude axis of the data
                 if flip_lat:
