@@ -9,7 +9,7 @@ The library gdio is based on my own professionals and personal needs as a meteor
 conda config --env --add channels conda-forge
 conda install gdio
 
-if you using pip install before install the basemap library
+if you are using pip install, before install the basemap library
 ```
 
 #### Required dependencies
@@ -74,6 +74,13 @@ Listing the grib content
 gr.gb_info(ifile)
 ```
 
+Setting the ensemble grouping grib id key
+
+```
+gr.fields_ensemble = 'perturbationNumber'
+gr.fields_ensemble_exception = [0]
+```
+
 ### Reading multiple files
 This class has high level routines for multiple files and type reading, returning the netcdf/grib data as a list of dictionary type.
 
@@ -84,6 +91,14 @@ ds = gdio(verbose=False)
 ds.mload(['tests/data/era5_20191226-27_lev.grib', 'tests/data/era5_20191227_lev.nc'],  
         merge_files=True, uniformize_grid=True, cut_domain=(-30, 300, 10, 320), inplace=True)
 ```
+
+Setting the ensemble grouping grib id key
+
+```
+ds.fields_ensemble = 'perturbationNumber'
+ds.fields_ensemble_exception = [0]
+```
+
 ## Release History
 
 
@@ -93,7 +108,7 @@ Rodrigo Yamamoto codes@rodrigoyamamoto.com
 https://github.com/rodri90y/gdio
 
 ## Contributing
-* 0.0.2
+* 0.0.7
     * alpha release
     
 

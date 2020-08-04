@@ -45,7 +45,8 @@ class gdio(object):
         self.__fields_time = ['time', 'TIME']
         self.__fields_level = ['level', 'lev', 'LEVEL', 'levels', 'LEVELS']
         self.__fields_3dlevel = ['depthBelowLandLayer', 'isobaricInhPa', 'hybrid', 'sigma', 'eta']
-
+        self.fields_ensemble = 'perturbationNumber'
+        self.fields_ensemble_exception = [0]
         self.level = None
         self.lon = None
         self.lat = None
@@ -83,6 +84,9 @@ class gdio(object):
             _data = None
 
             gb = gblib(verbose=self.verbose)
+            gb.fields_ensemble = self.fields_ensemble
+            gb.fields_ensemble_exception = self.fields_ensemble_exception
+
             nc = nclib(verbose=self.verbose)
 
             if gb.is_grib(ifile):

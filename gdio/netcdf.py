@@ -190,10 +190,34 @@ class netcdf(object):
         unity, ref_time = self.get_ref_time(self.time_units)
         data.update({'time_unit': unity, 'ref_time': ref_time})
 
-
         _nc.close()
 
         return data
+
+
+    def nc_write(self, ifile,
+                 data,
+                 zlib=True,
+                 netcdf_format='NETCDF4'):
+
+        _nc = Dataset(ifile, mode='w', format=netcdf_format)
+
+        # settings
+        if data.keys() & self.__fields_latitude:
+            _nc.createDimension('latitude', len(data.get('latitude')))
+
+        if data.keys() & self.__fields_longitude:
+            _nc.createDimension('longitude', len(data.get('longitude')))
+
+        _nc.createDimension('longitude', len(self.lon))
+        _nc.createDimension('time', len(self.time))
+
+
+
+        _nc.close()
+
+        return
+
 
 
     def get_ref_time(self, units=None):
