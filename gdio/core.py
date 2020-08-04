@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2019.Jan"
+__date__ = "2020.Ago"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.0.7"
+__version__ = "version 0.0.8"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -45,7 +45,8 @@ class gdio(object):
         self.__fields_time = ['time', 'TIME']
         self.__fields_level = ['level', 'lev', 'LEVEL', 'levels', 'LEVELS']
         self.__fields_3dlevel = ['depthBelowLandLayer', 'isobaricInhPa', 'hybrid', 'sigma', 'eta']
-
+        self.fields_ensemble = 'perturbationNumber'
+        self.fields_ensemble_exception = [0]
         self.level = None
         self.lon = None
         self.lat = None
@@ -83,6 +84,9 @@ class gdio(object):
             _data = None
 
             gb = gblib(verbose=self.verbose)
+            gb.fields_ensemble = self.fields_ensemble
+            gb.fields_ensemble_exception = self.fields_ensemble_exception
+
             nc = nclib(verbose=self.verbose)
 
             if gb.is_grib(ifile):
