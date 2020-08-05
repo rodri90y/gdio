@@ -3,7 +3,7 @@ __date__ = "2020.Ago"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.0.8"
+__version__ = "version 0.0.9"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -144,7 +144,7 @@ class gdio(object):
         griddes = ()
 
         ref_time = None
-        t_unit = 1
+        t_units = 1
 
         # convert timestep index to timeserie ......
         def dtp(t, unity=1):
@@ -174,7 +174,7 @@ class gdio(object):
 
                     if (vars is None or k in vars) \
                             and not k in ['latitude', 'longitude', 'lat', 'lon',
-                                          'level', 'ref_time', 'time', 'time_unit']:
+                                          'level', 'ref_time', 'time', 'time_units']:
 
                         # redim the data array ...........
                         if _dat[k].ndim == 2:
@@ -211,7 +211,7 @@ class gdio(object):
                                                                          lons_n, lats_n, order=1, masked=True)
 
                                     except Exception as e:
-                                        logging.error('''gdio.mload > auto remapping grid error {0}'''.format(k), e)
+                                        logging.error('''gdio.mload > auto remapping grid error {0}'''.format(e))
 
                                 _dat[k] = _tmp
 
@@ -221,10 +221,10 @@ class gdio(object):
                         data['longitude'], data['latitude'] = lons_n, lats_n
 
                     # convert to day unity
-                    if _dat['time_unit'] in ['hours', 'hrs']:
-                        t_unit = 1 / 24
+                    if _dat['time_units'] in ['hours', 'hrs']:
+                        t_units = 1 / 24
                     else:
-                        t_unit = 1
+                        t_units = 1
 
                     # merge files ........................
                     if merge_files:
@@ -235,14 +235,14 @@ class gdio(object):
                                     or k in self.__fields_longitude \
                                     or k in self.__fields_time \
                                     or k in self.__fields_level \
-                                    or k in ['ref_time', 'time_unit']):                            # merge variable field
+                                    or k in ['ref_time', 'time_units']):                            # merge variable field
                                 try:
                                     data[k] = np.concatenate((data[k], _dat[k]))
                                 except Exception as e:
                                     logging.error('''gdio.mload > error @ {0} - {1}'''.format(k, e))
 
                             elif k in self.__fields_time:                                          # merge datetime field
-                                _time = ref_time + vf(_dat['time'], t_unit)
+                                _time = ref_time + vf(_dat['time'], t_units)
                                 try:
                                     data[k] = np.concatenate((data[k], _time))
                                 except Exception as e:
@@ -257,7 +257,7 @@ class gdio(object):
 
                             # set datetime field
                             if k in self.__fields_time:
-                                data['time'] = ref_time + vf(_dat['time'], t_unit)
+                                data['time'] = ref_time + vf(_dat['time'], t_units)
                                 data['ref_time'] = [_dat['ref_time']]
 
                     else:
@@ -265,7 +265,7 @@ class gdio(object):
 
                         # set datetime field
                         if k in self.__fields_time:
-                            data['time'] = ref_time + vf(_dat['time'], t_unit)
+                            data['time'] = ref_time + vf(_dat['time'], t_units)
                             data['ref_time'] = [_dat['ref_time']]
 
 
@@ -273,7 +273,7 @@ class gdio(object):
                 # do not merge files option ..............
                 if not merge_files:
 
-                    data.update({'time': ref_time + vf(_dat['time'], t_unit)})
+                    data.update({'time': ref_time + vf(_dat['time'], t_units)})
                     data.update({'ref_time': [_dat['ref_time']]})
 
                     self.dataset.append(data)
@@ -288,12 +288,12 @@ class gdio(object):
                             or k in self.__fields_longitude \
                             or k in self.__fields_time \
                             or k in self.__fields_level \
-                            or k in ['ref_time', 'time_unit']):
+                            or k in ['ref_time', 'time_units']):
                         data[k] = np.concatenate((data[k], [data[k][-1] * np.nan]))
                     elif k in self.__fields_time:
-                        data[k] = np.concatenate((data[k], [data[k][-1] + timedelta(days=t_unit)]))
+                        data[k] = np.concatenate((data[k], [data[k][-1] + timedelta(days=t_units)]))
                     elif k in ['ref_time']:
-                        ref_time += timedelta(days=t_unit)
+                        ref_time += timedelta(days=t_units)
                         data[k] = np.concatenate((data[k], [ref_time]))
 
 

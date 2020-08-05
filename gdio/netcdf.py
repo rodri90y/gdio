@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2019.Jan"
+__date__ = "2020.Ago"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.0.8"
+__version__ = "version 0.0.9"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -188,7 +188,7 @@ class netcdf(object):
             self.variables.append(key)
 
         unity, ref_time = self.get_ref_time(self.time_units)
-        data.update({'time_unit': unity, 'ref_time': ref_time})
+        data.update({'time_units': unity, 'ref_time': ref_time})
 
         _nc.close()
 

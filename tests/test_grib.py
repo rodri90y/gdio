@@ -24,7 +24,7 @@ class TestGribFiles(unittest.TestCase):
     def setUp(self):
 
         self.expected_dim = (2, 7, 160, 80)
-        self.expected_variables = ['ref_time', 'time_unit', 'time', 'latitude', 'longitude', 't', 'u', 'v', 'r']
+        self.expected_variables = ['ref_time', 'time_units', 'time', 'latitude', 'longitude', 't', 'u', 'v', 'r']
         self.expected_times = [12, 24]
         self.expected_coordinate = ([26], [53])
 

@@ -27,7 +27,7 @@ class TestNcFiles(unittest.TestCase):
         self.expected_times = [datetime(2019,12,26,12,0), datetime(2019,12,27,0,0),
                                datetime(2019,12,27,12,0), datetime(2019,12,27,12,0)]
         self.expected_coordinate = ([26], [53])
-        self.expected_variables = ['ref_time', 'time_unit', 'time', 'latitude', 'longitude', 't', 'u', 'v', 'r', 'level']
+        self.expected_variables = ['ref_time', 'time_units', 'time', 'latitude', 'longitude', 't', 'u', 'v', 'r', 'level']
         self.expected_corrcoef = 0.94
         self.expected_sel = (1, 4, 6, 18)
 
@@ -78,5 +78,6 @@ class TestNcFiles(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
