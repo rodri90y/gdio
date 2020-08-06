@@ -3,7 +3,7 @@ __date__ = "2020.Ago"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.0.9"
+__version__ = "version 0.1.0"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -72,6 +72,7 @@ class netcdf(object):
 
         start, stop = None, None
         flip_lat = False
+        cut_domain_roll = 0
 
         # set coordinates .......................
         for key in _nc.variables.keys():
@@ -134,6 +135,17 @@ class netcdf(object):
 
                 y, x = near_yx({'latitude': self.lat, 'longitude': self.lon},
                                lats=[lat1, lat2], lons=[lon1, lon2])
+                while True:
+                    y, x = near_yx({'latitude': self.lat, 'longitude': self.lon},
+                                   lats=[lat1, lat2], lons=[lon1, lon2])
+                    print(x)
+                    # if x0>x1 the longitude is rolled of x0 elements
+                    # in order to avoid discontinuity 360-0 of the longitude
+                    if x[0] > x[1]:
+                        cut_domain_roll = -x[0]
+                        self.lon = np.roll(self.lon, cut_domain_roll, axis=0)
+                    else:
+                        break
 
 
         # trim lat/lon dimensions
@@ -153,6 +165,10 @@ class netcdf(object):
                     _data = _nc.variables[key][:].filled(np.nan)
             else:
                 _data = _nc.variables[key][:]
+
+
+            # if necessary roll longitude due discontinuity 360-0 of the longitude
+            _data = np.roll(_data, cut_domain_roll, axis=-1)
 
 
             if not (key in self.__fields_latitude

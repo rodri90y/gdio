@@ -108,7 +108,7 @@ Rodrigo Yamamoto codes@rodrigoyamamoto.com
 https://github.com/rodri90y/gdio
 
 ## Contributing
-* 0.0.9
+* 0.1.0
     * alpha release
     
 
