@@ -7,7 +7,7 @@ The library gdio is based on my own professionals and personal needs as a meteor
 ## Instalation
 ```
 conda config --env --add channels conda-forge
-conda install gdio
+conda install -c rodri90y gdio
 
 if you are using pip install, before install the basemap library
 ```
@@ -108,7 +108,7 @@ Rodrigo Yamamoto codes@rodrigoyamamoto.com
 https://github.com/rodri90y/gdio
 
 ## Contributing
-* 0.0.9
+* 0.1.0
     * alpha release
     
 

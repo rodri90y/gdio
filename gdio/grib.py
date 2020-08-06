@@ -3,7 +3,7 @@ __date__ = "2020.Ago"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.0.9"
+__version__ = "version 0.1.0"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -115,6 +115,7 @@ class grib(object):
             for k, gr in enumerate(msg):
                 start = 0
                 stop = len(msg)
+                cut_domain_roll = 0
 
                 # initialize time
                 if forecastDate is None:
@@ -203,10 +204,17 @@ class grib(object):
                             if cut_domain:
                                 if isinstance(cut_domain, tuple):
                                     lat1, lon1, lat2, lon2 = cut_domain
+                                    while True:
+                                        y, x = near_yx({'latitude': self.lat[:, 0], 'longitude': self.lon[0, :]},
+                                                            lats=[lat1, lat2], lons=[lon1, lon2])
 
-                                    y, x = near_yx({'latitude': self.lat[:, 0], 'longitude': self.lon[0, :]},
-                                                        lats=[lat1, lat2], lons=[lon1, lon2])
-
+                                        #if x0>x1 the longitude is rolled of x0 elements
+                                        #in order to avoid discontinuity 360-0 of the longitude
+                                        if x[0]>x[1]:
+                                            cut_domain_roll = -x[0]
+                                            self.lon = np.roll(self.lon, cut_domain_roll, axis=1)
+                                        else:
+                                            break
 
                             # trim lat/lon dimensions .........
                             self.lat = self.lat[y[0]:y[1], 0]
@@ -215,6 +223,8 @@ class grib(object):
                             data.update({'latitude': self.lat})
                             data.update({'longitude': self.lon})
 
+                            # if necessary roll longitude due discontinuity 360-0 of the longitude
+                            gr.values = np.roll(gr.values, cut_domain_roll, axis=-1)
 
                             # get data ........................
                             if idVar in _data.keys():
