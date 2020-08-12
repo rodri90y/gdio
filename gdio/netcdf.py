@@ -3,7 +3,7 @@ __date__ = "2020.Ago"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.0"
+__version__ = "version 0.1.1"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -178,9 +178,9 @@ class netcdf(object):
 
                 # redim the data array ...........
                 if _data.ndim == 2:
-                    _data = _data[None,:,:,:]
+                    _data = _data[None,None,:,:]
                 elif _data.ndim == 3:
-                    _data = _data[None,:,:,:]
+                    _data = _data[:,None,:,:]
 
                 # flip latitude axis of the data
                 if flip_lat:
@@ -188,7 +188,6 @@ class netcdf(object):
 
                 # resize the data array ...........
                 data.update({key: _data[start:stop, :, y[0]:y[1], x[0]:x[1]]})
-
 
             elif key in self.__fields_time:
                 data.update({key: self.time[start:stop]})
