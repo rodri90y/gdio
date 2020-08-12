@@ -3,7 +3,7 @@ __date__ = "2020.Ago"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.0"
+__version__ = "version 0.1.1"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -95,7 +95,6 @@ class gdio(object):
                                      cut_domain=cut_domain,
                                      level_type=level_type)
             else:
-
                 _data = nc.nc_load(ifile, vars=vars,
                                      cut_time=cut_time,
                                      cut_domain=cut_domain)
@@ -269,7 +268,6 @@ class gdio(object):
                             data['ref_time'] = [_dat['ref_time']]
 
 
-
                 # do not merge files option ..............
                 if not merge_files:
 
@@ -295,7 +293,6 @@ class gdio(object):
                     elif k in ['ref_time']:
                         ref_time += timedelta(days=t_units)
                         data[k] = np.concatenate((data[k], [ref_time]))
-
 
                 logging.warning('''io.load_nc > missing file applying null grid''')
 
