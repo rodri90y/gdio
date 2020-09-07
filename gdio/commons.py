@@ -1,5 +1,33 @@
 import numpy as np
+import difflib
 
+class objectify(dict):
+    """ Nested Attribute Dictionary
+        A class to convert a nested Dictionary into an object with key-values
+        accessible using attribute notation (AttrDict.attribute) in addition to
+        key notation (Dict["key"]). This class recursively sets Dicts to objects,
+        allowing you to recurse into nested dicts (like: AttrDict.attr.attr)
+        """
+
+    def __init__(self, mapping=None):
+        super(objectify, self).__init__()
+        if mapping is not None:
+            for key, value in mapping.items():
+                self.__setitem__(key, value)
+
+    def __setitem__(self, key, value):
+        if isinstance(value, dict):
+            value = objectify(value)
+        super(objectify, self).__setitem__(key, value)
+        self.__dict__[key] = value  # for code completion in editors
+
+    def __getattr__(self, item):
+        try:
+            return self.__getitem__(item)
+        except KeyError:
+            raise AttributeError(item)
+
+    __setattr__ = __setitem__
 
 def near_yx(data, lats=None, lons=None):
     '''
@@ -50,3 +78,23 @@ def near_yx(data, lats=None, lons=None):
         x.append(_x);
 
     return y, x
+
+
+def dict_get(data, key=None, by='values'):
+    '''
+    Get closest matches of list keys
+    :param data:    dict
+
+    :param key:     str
+    :param by:      str
+                    lists or keys criteria
+    :return:
+    '''
+    if by=='values':
+        for k, v in data.items():
+            v = v if isinstance(v, list) else list(v)
+            _k = difflib.get_close_matches(key, v, 1, 0.85)
+            if _k:
+                return _k, k
+    else:
+        return data.get(key)

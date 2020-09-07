@@ -23,8 +23,10 @@ class TestNcFiles(unittest.TestCase):
 
         self.expected_dim = (1, 7, 80, 40)
         self.expected_times = [12]
+        self.expected_level_type = 'millibars'
+        self.expected_units = 'm s**-1'
         self.expected_coordinate = ([13], [27])
-
+        self.expected_levels = [200, 300, 500, 700, 800, 950, 1000]
 
 
     def test_open_netcdf(self):
@@ -33,13 +35,28 @@ class TestNcFiles(unittest.TestCase):
     def test_netcdf_variables_test(self):
 
         self.assertEqual(list(self.nc.keys()),
-                         ['time', 'longitude', 'latitude', 'level', 'r', 't', 'u', 'v', 'time_units', 'ref_time'],
+                         ['ref_time', 'time_units', 'time', 'longitude', 'latitude', 'r', 't', 'u', 'v'],
                          'incorrect number of variables')
 
     def test_netcdf_varible_dimension(self):
 
-        self.assertEqual(self.nc.get('u').shape, self.expected_dim,
+        self.assertEqual(self.nc.get('u').value.shape, self.expected_dim,
                          'dimension shape of u variable incorrect')
+
+    def test_grib_levels(self):
+
+        self.assertEqual(self.nc.get('u').level, self.expected_levels,
+                         'levels of u variable incorrect')
+
+    def test_grib_level_type(self):
+
+        self.assertEqual(self.nc.get('u').type_level, self.expected_level_type,
+                         'level type of u variable incorrect')
+
+    def test_grib_varible_units(self):
+
+        self.assertEqual(self.nc.get('u').parameter_units, self.expected_units,
+                         'units of u variable incorrect')
 
     def test_grib_cut_time(self):
 
@@ -58,5 +75,3 @@ class TestNcFiles(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-
