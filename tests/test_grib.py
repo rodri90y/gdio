@@ -25,8 +25,11 @@ class TestGribFiles(unittest.TestCase):
 
         self.expected_dim = (2, 7, 160, 80)
         self.expected_variables = ['ref_time', 'time_units', 'time', 'latitude', 'longitude', 't', 'u', 'v', 'r']
+        self.expected_level_type = 'isobaricInhPa'
+        self.expected_units = 'm s**-1'
         self.expected_times = [12, 24]
         self.expected_coordinate = ([26], [53])
+        self.expected_levels = [200, 300, 500, 700, 800, 950, 1000]
 
 
     def test_open_grib(self):
@@ -40,8 +43,22 @@ class TestGribFiles(unittest.TestCase):
 
     def test_grib_varible_dimension(self):
 
-        self.assertEqual(self.gbr.get('u').shape, self.expected_dim,
+        self.assertEqual(self.gbr.get('u').value.shape, self.expected_dim,
                          'dimension shape of u variable incorrect')
+    def test_grib_levels(self):
+
+        self.assertEqual(self.gbr.get('u').level, self.expected_levels,
+                         'levels of u variable incorrect')
+
+    def test_grib_level_type(self):
+
+        self.assertEqual(self.gbr.get('u').type_level, self.expected_level_type,
+                         'level type of u variable incorrect')
+
+    def test_grib_varible_units(self):
+
+        self.assertEqual(self.gbr.get('u').parameter_units, self.expected_units,
+                         'units of u variable incorrect')
 
     def test_grib_cut_time(self):
 

@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2020.Ago"
+__date__ = "2020.Set"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.1"
+__version__ = "version 0.1.2"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -13,9 +13,8 @@ import numpy as np
 from netCDF4 import Dataset
 import logging
 
-from gdio.commons import near_yx
+from gdio.commons import near_yx, objectify, dict_get
 from datetime import datetime
-
 
 
 class netcdf(object):
@@ -30,9 +29,16 @@ class netcdf(object):
         self.__fields_latitude = ['latitude', 'lat', 'xlat', 'LATITUDE']
         self.__fields_longitude = ['longitude', 'lon', 'xlon', 'LONGITUDE']
         self.__fields_time = ['time', 'TIME']
-        self.__fields_level = ['level', 'lev', 'LEVEL', 'levels', 'LEVELS', 'mdllevel', 'presmdl']
+        self.__fields_level = {
+                                'isobaricInhPa': ['level','levels','lev','presmdl'],
+                                'millibars': ['level','levels','lev','presmdl'],
+                                'hybrid': ['mdllevel','level_hybrid'],
+                                'Eta_level': ['eta'],
+                                'Sigma_level': ['sigma']
+                              }
+        self.__fields_order = ['time','latitude','longitude']
+        self.__fields_order.insert(1, sum(self.__fields_level.values(),[])[0])
 
-        self.level = None
         self.lon = None
         self.lat = None
         self.time = None
@@ -64,7 +70,7 @@ class netcdf(object):
         :return:            dict
         '''
 
-        data = dict()
+        data = objectify()
 
         _nc = Dataset(ifile, mode='r')
 
@@ -73,6 +79,7 @@ class netcdf(object):
         start, stop = None, None
         flip_lat = False
         cut_domain_roll = 0
+        typLev = None
 
         # set coordinates .......................
         for key in _nc.variables.keys():
@@ -95,11 +102,10 @@ class netcdf(object):
                 if flip_lat:
                     self.lat = np.flip(self.lat, axis=0)
 
-            elif key in self.__fields_level:
-                self.coordinates.append('level')
-                self.level = _nc.variables[key][:]
-
-
+            elif key.lower() in sum(self.__fields_level.values(),[]):
+                self.coordinates.append(key)
+                levels = list(_nc.variables[key][:].astype(int))
+                typLev = _nc[key].units
 
         # remove unused variables ................
 
@@ -107,7 +113,7 @@ class netcdf(object):
             for variable in list(_nc.variables.keys()):
                 if not (variable in vars
                         or variable in self.__fields_latitude
-                        or variable in self.__fields_level
+                        or variable in sum(self.__fields_level.values(),[])
                         or variable in self.__fields_longitude
                         or variable in self.__fields_time):
                     del _nc.variables[variable]
@@ -138,7 +144,7 @@ class netcdf(object):
                 while True:
                     y, x = near_yx({'latitude': self.lat, 'longitude': self.lon},
                                    lats=[lat1, lat2], lons=[lon1, lon2])
-                    print(x)
+
                     # if x0>x1 the longitude is rolled of x0 elements
                     # in order to avoid discontinuity 360-0 of the longitude
                     if x[0] > x[1]:
@@ -152,11 +158,12 @@ class netcdf(object):
         self.lat = self.lat[y[0]:y[1]]
         self.lon = self.lon[x[0]:x[1]]
 
+        unity, ref_time = self.get_ref_time(self.time_units)
+        data.update({'ref_time': ref_time, 'time_units': unity})
 
         # select variables ......................
         for key in _nc.variables.keys():
-
-            _data = dict()
+            _data = objectify()
 
             if np.ma.isMaskedArray(_nc.variables[key][:]):
                 if not 'float' in _nc.variables[key][:].data.dtype.name:
@@ -170,11 +177,10 @@ class netcdf(object):
             # if necessary roll longitude due discontinuity 360-0 of the longitude
             _data = np.roll(_data, cut_domain_roll, axis=-1)
 
-
             if not (key in self.__fields_latitude
-                                 or key in self.__fields_level
-                                 or key in self.__fields_longitude
-                                 or key in self.__fields_time):
+                 or key.lower() in sum(self.__fields_level.values(),[])
+                 or key in self.__fields_longitude
+                 or key in self.__fields_time):
 
                 # redim the data array ...........
                 if _data.ndim == 2:
@@ -186,8 +192,15 @@ class netcdf(object):
                 if flip_lat:
                     _data = np.flip(_data, axis=2)
 
-                # resize the data array ...........
-                data.update({key: _data[start:stop, :, y[0]:y[1], x[0]:x[1]]})
+                # resize the data array and consolidate ...........
+                data[key] = {'value': _data[start:stop, :, y[0]:y[1], x[0]:x[1]]}
+                data[key].update({
+                                    'param_id': None,
+                                    'type_level': typLev,
+                                    'level': levels,
+                                    'parameter_units': _nc[key].units
+                                }
+                                )
 
             elif key in self.__fields_time:
                 data.update({key: self.time[start:stop]})
@@ -195,15 +208,8 @@ class netcdf(object):
                 data.update({key: self.lat})
             elif key in self.__fields_longitude:
                 data.update({key: self.lon})
-            elif key in self.__fields_level:
-                data.update({key: self.level})
-            else:
-                data.update({key: _data[:]})
 
             self.variables.append(key)
-
-        unity, ref_time = self.get_ref_time(self.time_units)
-        data.update({'time_units': unity, 'ref_time': ref_time})
 
         _nc.close()
 
@@ -214,24 +220,105 @@ class netcdf(object):
                  data,
                  zlib=True,
                  netcdf_format='NETCDF4'):
+        '''
+        Write netcdf file
+
+        :param ifile:           string
+                                file path
+        :param data:            dict
+                                dataset
+        :param zlib:            bool
+                                enable compression
+        :param netcdf_format:   string
+                                netcdf format: NETCDF4, NETCDF4_CLASSIC, NETCDF3_CLASSIC or NETCDF3_64BIT
+        :return:
+        '''
 
         _nc = Dataset(ifile, mode='w', format=netcdf_format)
 
         # settings
-        if data.keys() & self.__fields_latitude:
-            _nc.createDimension('latitude', len(data.get('latitude')))
+        if self.history:
+            _nc.history = self.history
+        else:
+            _nc.history = 'Created by gdio @ {date:%Y%m%d%H}'.format(date=datetime.now())
 
-        if data.keys() & self.__fields_longitude:
-            _nc.createDimension('longitude', len(data.get('longitude')))
+        data = data if isinstance(data, objectify) else objectify(data)
+        dims = list()
 
-        _nc.createDimension('longitude', len(self.lon))
-        _nc.createDimension('time', len(self.time))
 
+        for key, val in data.items():
+
+            if self.verbose:
+                logging.debug('''writing {var}'''.format(var=key))
+
+            if key in self.__fields_time:
+                _nc.createDimension('time', len(val))
+                time = _nc.createVariable('time', 'f8', ('time',), zlib=zlib)
+                time.standard_name = 'time'
+                time.units = "{0} since {1}".format(data.get('time_units'), data.get('ref_time'))
+                time.calendar = 'standard'
+                time.axis = 'T'
+
+                time[:] = val
+                dims.append(key)
+
+            elif key in self.__fields_latitude:
+                _nc.createDimension('latitude', len(data.get('latitude')))
+                lat = _nc.createVariable('latitude', 'f8', ('latitude',), zlib=zlib)
+                lat.standard_name = 'latitude'
+                lat.long_name = 'latitude'
+                lat.units = 'degrees_north'
+                lat.grads_dim = 'Y'
+
+                lat[:] = val
+                dims.append(key)
+
+            elif key in self.__fields_longitude:
+                _nc.createDimension('longitude', len(val))
+                lon = _nc.createVariable('longitude', 'f8', ('longitude',), zlib=zlib)
+                lon.standard_name = 'longitude'
+                lon.long_name = 'longitude'
+                lon.units = 'degrees_east'
+                lon.grads_dim = 'x'
+
+                # convert from 360 to -180,180 format
+                lon[:] = ((val[:]-180) % 360) - 180
+                dims.append(key)
+
+            else:
+
+                if isinstance(val, dict):
+
+                    level_id = None
+
+                    # create multiples z axis dimensions
+                    if 'type_level' in val.keys():
+
+                        level_id = self.__fields_level.get(val.type_level, ['level'])[0]
+
+                        if not level_id in _nc.dimensions:
+                            _nc.createDimension(level_id, len(val.level))
+                            level = _nc.createVariable(level_id, 'f8', (level_id,), zlib=zlib)
+                            level[:] = val.level
+                            level.units = val.get('type_level')
+                            level.axis = 'Z'
+                            level.filling = 'off'
+                            dims.append(level_id)
+
+                    # add variables
+                    if 'value' in val.keys():
+                        ncvar = _nc.createVariable(key, "f8",
+                                           sorted(dims, key=lambda d: self.__fields_order.index(d)),
+                                           zlib=True)
+
+                        if isinstance(val.value, np.ndarray):
+                            ncvar[:] = val.value
+                            ncvar.missing_value = 9.999e20
+                            ncvar.units = val.get('parameter_units')
 
 
         _nc.close()
 
-        return
 
 
 
