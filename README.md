@@ -12,7 +12,7 @@ After version 0.1.2 the output data was converted to object with key-values acce
 conda config --env --add channels conda-forge
 conda install -c rodri90y gdio
 
-if you are using pip install, before install the basemap library
+if you are using pip install, before install manually the requirements  before
 ```
 
 #### Required dependencies
@@ -176,7 +176,7 @@ Rodrigo Yamamoto codes@rodrigoyamamoto.com
 https://github.com/rodri90y/gdio
 
 ## Contributing
-* 0.1.2
+* 0.1.3
     * alpha release
     
 
