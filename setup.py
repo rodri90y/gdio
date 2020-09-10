@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='gdio',
-    version='0.1.2',
+    version='0.1.3',
     description='Gridded data io library',
     long_description='Gridded data io library. Grib and netcdf files handler, ',
     long_description_content_type='text/markdown',

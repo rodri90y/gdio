@@ -100,180 +100,180 @@ class grib(object):
         _data = objectify()
         data = objectify()
 
-        # try:
+        try:
 
-        _gb = pygrib.open(ifile)
+            _gb = pygrib.open(ifile)
 
-        msg = [g for g in _gb]
-        msg.sort(key=lambda x: (x.validDate, x.step, x.paramId, x.typeOfLevel, x.level))
+            msg = [g for g in _gb]
+            msg.sort(key=lambda x: (x.validDate, x.step, x.paramId, x.typeOfLevel, x.level))
 
-        forecastDate = None
-        fcst_time = 0
-        concat_time = False
-        last_idVar = None
+            forecastDate = None
+            fcst_time = 0
+            concat_time = False
+            last_idVar = None
 
-        for k, gr in enumerate(msg):
-            start = 0
-            stop = len(msg)
-            cut_domain_roll = 0
+            for k, gr in enumerate(msg):
+                start = 0
+                stop = len(msg)
+                cut_domain_roll = 0
 
-            # initialize time
-            if forecastDate is None:
-                self.history = "Created by gdio @ {date:%Y%m%d%H}".format(date=datetime.now())
-                ref_time = datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute)
-
-
-            # set time coordinate ....................
-            if not forecastDate == self.fcstTime(gr):
-                concat_time = True
-                forecastDate = self.fcstTime(gr)
-                fcst_time = int((forecastDate-ref_time).total_seconds()/(self.__unity(gr)*3600))
+                # initialize time
+                if forecastDate is None:
+                    self.history = "Created by gdio @ {date:%Y%m%d%H}".format(date=datetime.now())
+                    ref_time = datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute)
 
 
-            # set temporal subdomain .......
-            if isinstance(cut_time, tuple):
-                start, stop = cut_time
-                start = 0 if start is None else start
-                stop = len(msg) if stop is None else stop
+                # set time coordinate ....................
+                if not forecastDate == self.fcstTime(gr):
+                    concat_time = True
+                    forecastDate = self.fcstTime(gr)
+                    fcst_time = int((forecastDate-ref_time).total_seconds()/(self.__unity(gr)*3600))
 
 
-            if self.verbose:
-                logging.debug('''forecastDate: {0} / cut_time_range: {1}-{2}'''.format(forecastDate,start,stop))
+                # set temporal subdomain .......
+                if isinstance(cut_time, tuple):
+                    start, stop = cut_time
+                    start = 0 if start is None else start
+                    stop = len(msg) if stop is None else stop
 
 
-            # cut time between start and stop time
-            if (not cut_time or (fcst_time >= start and fcst_time <= stop)):
-
-                typLev = gr.typeOfLevel
-
-                if (level_type is None or typLev in level_type):
-
-                    if self.verbose:
-                        logging.debug('''{0}, {1}, {2}, {3}, {4}, {5} '''.format(gr.dataDate,
-                                                     gr.shortName,
-                                                     gr.paramId,
-                                                     gr.name,
-                                                     gr.typeOfLevel,
-                                                     gr.level,
-                                                     gr.values.shape)
-                                      )
-
-                    # handle the variable id
-                    idVar = gr.shortName if not gr.shortName in ['', 'unknown'] else str(gr.paramId)
-
-                    if not typLev in ['surface', 'isobaricInhPa']:
-                        idVar = f'{idVar}_{typLev}'.replace(' ', '_')
+                if self.verbose:
+                    logging.debug('''forecastDate: {0} / cut_time_range: {1}-{2}'''.format(forecastDate,start,stop))
 
 
-                    if self.fields_ensemble in gr.keys():
-                        if not gr[self.fields_ensemble] in self.fields_ensemble_exception:
-                            idVar += '_m{0}'.format(gr[self.fields_ensemble]).replace(' ', '_')
+                # cut time between start and stop time
+                if (not cut_time or (fcst_time >= start and fcst_time <= stop)):
+
+                    typLev = gr.typeOfLevel
+
+                    if (level_type is None or typLev in level_type):
+
+                        if self.verbose:
+                            logging.debug('''{0}, {1}, {2}, {3}, {4}, {5} '''.format(gr.dataDate,
+                                                         gr.shortName,
+                                                         gr.paramId,
+                                                         gr.name,
+                                                         gr.typeOfLevel,
+                                                         gr.level,
+                                                         gr.values.shape)
+                                          )
+
+                        # handle the variable id
+                        idVar = gr.shortName if not gr.shortName in ['', 'unknown'] else str(gr.paramId)
+
+                        if not typLev in ['surface', 'isobaricInhPa']:
+                            idVar = f'{idVar}_{typLev}'.replace(' ', '_')
 
 
-                    # concatenate variables .......................................
-                    if vars is None or gr.shortName in vars or gr.paramId in vars:
-
-                        # setup time ref/unity ...............
-                        if not ('ref_time' in data.keys() or 'time_units' in data.keys()):
-                            data.update({'ref_time': ref_time})
-                            data.update({'time_units': gr.fcstimeunits})
-                            self.time_units = '{0} since {1}'.format(gr.fcstimeunits, ref_time)
-
-                        # merge time ...............
-                        if concat_time:
-                            data = self.__concat_time(_data, data, fcst_time)
-                            concat_time = False
-                            _data = objectify()
-
-                        # set spatial coordinates ......
-                        self.lat, self.lon = gr.latlons()
-
-                        # convert from -180,180 to 360 format
-                        self.lon = (self.lon + 360) % 360
-
-                        flip_lat = self.lat[-1, 0] < self.lat[0, 0]
-
-                        if flip_lat:
-                            self.lat = np.flip(self.lat, axis=0)
+                        if self.fields_ensemble in gr.keys():
+                            if not gr[self.fields_ensemble] in self.fields_ensemble_exception:
+                                idVar += '_m{0}'.format(gr[self.fields_ensemble]).replace(' ', '_')
 
 
-                        # select spatial subdomain .......
+                        # concatenate variables .......................................
+                        if vars is None or gr.shortName in vars or gr.paramId in vars:
 
-                        y, x = [None, None], [None, None]
+                            # setup time ref/unity ...............
+                            if not ('ref_time' in data.keys() or 'time_units' in data.keys()):
+                                data.update({'ref_time': ref_time})
+                                data.update({'time_units': gr.fcstimeunits})
+                                self.time_units = '{0} since {1}'.format(gr.fcstimeunits, ref_time)
 
-                        if cut_domain:
-                            if isinstance(cut_domain, tuple):
-                                lat1, lon1, lat2, lon2 = cut_domain
-                                while True:
-                                    y, x = near_yx({'latitude': self.lat[:, 0], 'longitude': self.lon[0, :]},
-                                                        lats=[lat1, lat2], lons=[lon1, lon2])
+                            # merge time ...............
+                            if concat_time:
+                                data = self.__concat_time(_data, data, fcst_time)
+                                concat_time = False
+                                _data = objectify()
 
-                                    #if x0>x1 the longitude is rolled of x0 elements
-                                    #in order to avoid discontinuity 360-0 of the longitude
-                                    if x[0]>x[1]:
-                                        cut_domain_roll = -x[0]
-                                        self.lon = np.roll(self.lon, cut_domain_roll, axis=1)
-                                    else:
-                                        break
+                            # set spatial coordinates ......
+                            self.lat, self.lon = gr.latlons()
 
-                        # trim lat/lon dimensions .........
-                        self.lat = self.lat[y[0]:y[1], 0]
-                        self.lon = self.lon[0, x[0]:x[1]]
+                            # convert from -180,180 to 360 format
+                            self.lon = (self.lon + 360) % 360
 
-                        data.update({'latitude': self.lat})
-                        data.update({'longitude': self.lon})
+                            flip_lat = self.lat[-1, 0] < self.lat[0, 0]
 
-                        # if necessary roll longitude due discontinuity 360-0 of the longitude
-                        gr.values = np.roll(gr.values, cut_domain_roll, axis=-1)
-
-                        # get data ........................
-                        if idVar in _data.keys():
-                            try:
-                                # concatenate levels
-                                if typLev in self.__fields_3dlevel:
-
-                                    if flip_lat:
-                                        _data[idVar].value = np.concatenate((_data[idVar].value,
-                                                                       np.flip(gr.values, axis=0)[None, None,
-                                                                       y[0]:y[1], x[0]:x[1]]),
-                                                                      axis=1)
-                                    else:
-                                        _data[idVar].value = np.concatenate((_data[idVar].value,
-                                                                       gr.values[None, None, y[0]:y[1],
-                                                                       x[0]:x[1]]),
-                                                                      axis=1)
-
-                                    _data[idVar].level.append(gr.level)
-
-                            except Exception as e:
-                                logging.error('''[E] gdio.gb_load >> {0}'''.format(e))
-                        else:
                             if flip_lat:
-                                _data[idVar] = {'value': np.flip(gr.values, axis=0)[None, None, y[0]:y[1], x[0]:x[1]]}
+                                self.lat = np.flip(self.lat, axis=0)
+
+
+                            # select spatial subdomain .......
+
+                            y, x = [None, None], [None, None]
+
+                            if cut_domain:
+                                if isinstance(cut_domain, tuple):
+                                    lat1, lon1, lat2, lon2 = cut_domain
+                                    while True:
+                                        y, x = near_yx({'latitude': self.lat[:, 0], 'longitude': self.lon[0, :]},
+                                                            lats=[lat1, lat2], lons=[lon1, lon2])
+
+                                        #if x0>x1 the longitude is rolled of x0 elements
+                                        #in order to avoid discontinuity 360-0 of the longitude
+                                        if x[0]>x[1]:
+                                            cut_domain_roll = -x[0]
+                                            self.lon = np.roll(self.lon, cut_domain_roll, axis=1)
+                                        else:
+                                            break
+
+                            # trim lat/lon dimensions .........
+                            self.lat = self.lat[y[0]:y[1], 0]
+                            self.lon = self.lon[0, x[0]:x[1]]
+
+                            data.update({'latitude': self.lat})
+                            data.update({'longitude': self.lon})
+
+                            # if necessary roll longitude due discontinuity 360-0 of the longitude
+                            gr.values = np.roll(gr.values, cut_domain_roll, axis=-1)
+
+                            # get data ........................
+                            if idVar in _data.keys():
+                                try:
+                                    # concatenate levels
+                                    if typLev in self.__fields_3dlevel:
+
+                                        if flip_lat:
+                                            _data[idVar].value = np.concatenate((_data[idVar].value,
+                                                                           np.flip(gr.values, axis=0)[None, None,
+                                                                           y[0]:y[1], x[0]:x[1]]),
+                                                                          axis=1)
+                                        else:
+                                            _data[idVar].value = np.concatenate((_data[idVar].value,
+                                                                           gr.values[None, None, y[0]:y[1],
+                                                                           x[0]:x[1]]),
+                                                                          axis=1)
+
+                                        _data[idVar].level.append(gr.level)
+
+                                except Exception as e:
+                                    logging.error('''[E] gdio.gb_load >> {0}'''.format(e))
                             else:
-                                _data[idVar] = {'value': gr.values[None, None, y[0]:y[1], x[0]:x[1]]}
+                                if flip_lat:
+                                    _data[idVar] = {'value': np.flip(gr.values, axis=0)[None, None, y[0]:y[1], x[0]:x[1]]}
+                                else:
+                                    _data[idVar] = {'value': gr.values[None, None, y[0]:y[1], x[0]:x[1]]}
 
-                            _data[idVar].update({
-                                                    'param_id': gr.paramId,
-                                                    'type_level': typLev,
-                                                    'level': [gr.level],
-                                                    'parameter_units': gr.parameterUnits
-                                                 }
-                                                )
-
-
-            # consolidate data for last time block  ................
-            if k + 1 == len(msg):
-                data = self.__concat_time(_data, data)
-
-        self.variables = list(data.keys())
-        self.coordinates.append('latitude')
-        self.coordinates.append('longitude')
-        self.coordinates.append('level')
+                                _data[idVar].update({
+                                                        'param_id': gr.paramId,
+                                                        'type_level': typLev,
+                                                        'level': [gr.level],
+                                                        'parameter_units': gr.parameterUnits
+                                                     }
+                                                    )
 
 
-        # except Exception as e:
-        #     logging.error('''gdio.gb_load > '''.format(e))
+                # consolidate data for last time block  ................
+                if k + 1 == len(msg):
+                    data = self.__concat_time(_data, data)
+
+            self.variables = list(data.keys())
+            self.coordinates.append('latitude')
+            self.coordinates.append('longitude')
+            self.coordinates.append('level')
+
+
+        except Exception as e:
+            logging.error('''gdio.gb_load > '''.format(e))
 
         return data
 
