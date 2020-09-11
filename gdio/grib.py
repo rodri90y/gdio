@@ -3,7 +3,7 @@ __date__ = "2020.Set"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.2"
+__version__ = "version 0.1.4"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -255,6 +255,7 @@ class grib(object):
 
                                 _data[idVar].update({
                                                         'param_id': gr.paramId,
+                                                        'long_name': gr.name,
                                                         'type_level': typLev,
                                                         'level': [gr.level],
                                                         'parameter_units': gr.parameterUnits
@@ -273,7 +274,7 @@ class grib(object):
 
 
         except Exception as e:
-            logging.error('''gdio.gb_load > '''.format(e))
+            logging.error('''gdio.gb_load > {0}'''.format(e))
 
         return data
 

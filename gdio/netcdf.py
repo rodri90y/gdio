@@ -3,7 +3,7 @@ __date__ = "2020.Set"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.2"
+__version__ = "version 0.1.4"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -81,6 +81,7 @@ class netcdf(object):
             flip_lat = False
             cut_domain_roll = 0
             typLev = None
+            levels = [0]
 
             # set coordinates .......................
             for key in _nc.variables.keys():
@@ -106,10 +107,10 @@ class netcdf(object):
                 elif key.lower() in sum(self.__fields_level.values(),[]):
                     self.coordinates.append(key)
                     levels = list(_nc.variables[key][:].astype(int))
-                    typLev = _nc[key].units
+                    typLev = self.get_attr(_nc[key],'units')
+
 
             # remove unused variables ................
-
             if isinstance(vars, list) or isinstance(vars, tuple):
                 for variable in list(_nc.variables.keys()):
                     if not (variable in vars
@@ -174,7 +175,6 @@ class netcdf(object):
                 else:
                     _data = _nc.variables[key][:]
 
-
                 # if necessary roll longitude due discontinuity 360-0 of the longitude
                 _data = np.roll(_data, cut_domain_roll, axis=-1)
 
@@ -195,12 +195,14 @@ class netcdf(object):
 
                     # resize the data array and consolidate ...........
                     data[key] = {'value': _data[start:stop, :, y[0]:y[1], x[0]:x[1]]}
+
                     data[key].update({
                                         'param_id': None,
+                                        'long_name': self.get_attr(_nc[key],'long_name'),
                                         'type_level': typLev,
                                         'level': levels,
-                                        'parameter_units': _nc[key].units
-                                    }
+                                        'parameter_units': self.get_attr(_nc[key],'units')
+                                     }
                                     )
 
                 elif key in self.__fields_time:
@@ -210,14 +212,14 @@ class netcdf(object):
                 elif key in self.__fields_longitude:
                     data.update({key: self.lon})
 
-                self.variables.append(key)
 
             _nc.close()
 
         except Exception as e:
-            logging.error('''gdio.gb_load > '''.format(e))
+            logging.error('''gdio.nc_load > {0}'''.format(e))
 
         return data
+
 
 
     def nc_write(self, ifile,
@@ -324,6 +326,16 @@ class netcdf(object):
         _nc.close()
 
 
+    def get_attr(self, nc, attr, default=None):
+        '''
+        Get netcdf attribute
+        :param nc:      object
+                        netcdf object
+        :param attr:    string
+                        attribute name
+        :return:        data
+        '''
+        return nc.getncattr(attr) if attr in nc.ncattrs() else default
 
 
     def get_ref_time(self, units=None):
