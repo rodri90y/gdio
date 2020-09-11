@@ -12,7 +12,7 @@ After version 0.1.2 the output data was converted to object with key-values acce
 conda config --env --add channels conda-forge
 conda install -c rodri90y gdio
 
-if you are using pip install, before install manually the requirements  before
+if you are using pip install, before install manually the requirements
 ```
 
 #### Required dependencies
