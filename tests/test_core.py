@@ -99,23 +99,4 @@ class TestNcFiles(unittest.TestCase):
                          'dimension shape of u variable incorrect')
 
 if __name__ == '__main__':
-    # unittest.main()
-
-    ds = gdio(verbose=False)
-
-    ds.mload(
-         [
-            '/home/rodrigo/data/2020082406_da0.nc',
-            '/home/rodrigo/data/2020082407_da0.nc',
-            '/home/rodrigo/data/2020082408_da0.nc',
-         ],vars=['wspd'],
-                  merge_files=True,
-                  uniformize_grid=True,
-                  cut_domain=(-30, 300, 10, 320),
-                  # cut_time=(12, 36),
-                  inplace=True
-                  )
-
-    print(ds.dataset[0].get('time'))
-    print(ds.dataset[0].wspd.value.shape)
-    # print(ds.dataset[0].keys())
+    unittest.main()

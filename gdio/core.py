@@ -3,7 +3,7 @@ __date__ = "2020.Set"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.4"
+__version__ = "version 0.1.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -52,8 +52,7 @@ class gdio(object):
         self.time_units = None
         self.history = None
 
-        logging.basicConfig(handlers=[logging.StreamHandler()],
-                            datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
+        logging.basicConfig(datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
                             format='[%(levelname)s @ %(asctime)s] %(message)s')
 
 
@@ -61,8 +60,8 @@ class gdio(object):
     def thread(self, ifile, vars=None, cut_time=None, cut_domain=None, level_type=None):
         '''
         Load and cutting function
-        :param conf:                list
-                                    filename e index
+        :param ifile:               string
+                                    filename
         :param vars:                list
                                     lista de variaveis
         :param cut_time:            tuple
@@ -229,10 +228,10 @@ class gdio(object):
 
                         if k in data.keys():
 
-                            if not (k in self.__fields_latitude \
-                                    or k in self.__fields_longitude \
-                                    or k in self.__fields_time \
-                                    or k in self.__fields_level \
+                            if not (k in self.__fields_latitude
+                                    or k in self.__fields_longitude
+                                    or k in self.__fields_time
+                                    or k in self.__fields_level
                                     or k in ['ref_time', 'time_units']):                            # merge variable field
                                 try:
                                     data[k].value = np.concatenate((data[k].value, _dat[k].value))
@@ -275,10 +274,10 @@ class gdio(object):
                 # in case of missing file ................
                 for k in data.keys():
 
-                    if not (k in self.__fields_latitude \
-                            or k in self.__fields_longitude \
-                            or k in self.__fields_time \
-                            or k in self.__fields_level \
+                    if not (k in self.__fields_latitude
+                            or k in self.__fields_longitude
+                            or k in self.__fields_time
+                            or k in self.__fields_level
                             or k in ['ref_time', 'time_units']):
                         data[k].value = np.concatenate((data[k].value, [data[k].value[-1] * np.nan]))
                     elif k in self.__fields_time:

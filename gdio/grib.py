@@ -3,18 +3,19 @@ __date__ = "2020.Set"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.4"
+__version__ = "version 0.1.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
 
+import logging
+from datetime import datetime, timedelta
+
 import numpy as np
 import pygrib
-import logging
+from texttable import Texttable
 
 from gdio.commons import near_yx, objectify
-from texttable import Texttable
-from datetime import datetime, timedelta
 
 
 class grib(object):
@@ -37,8 +38,7 @@ class grib(object):
         self.time_units = None
         self.history = None
 
-        logging.basicConfig(handlers=[logging.StreamHandler()],
-                            datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
+        logging.basicConfig(datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
                             format='[%(levelname)s @ %(asctime)s] %(message)s')
 
 
@@ -110,7 +110,7 @@ class grib(object):
             forecastDate = None
             fcst_time = 0
             concat_time = False
-            last_idVar = None
+            ref_time = None
 
             for k, gr in enumerate(msg):
                 start = 0
@@ -353,7 +353,6 @@ class grib(object):
         '''
         Check if is grib file
         from Igor@Out.2019
-        :param file_or_buffer:
         :rtype: bool
         :return:
         '''
