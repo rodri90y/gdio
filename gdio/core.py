@@ -8,21 +8,20 @@ __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
 
-import os, copy
+import copy
+import logging
+import multiprocessing
+import os
+import warnings
+from datetime import datetime, timedelta
+from functools import partial
 
 import numpy as np
 import numpy.ma as ma
-import multiprocessing
-import logging
 
-from functools import partial
-from datetime import datetime, timedelta
-
+from gdio.commons import near_yx, objectify
 from gdio.grib import grib as gblib
 from gdio.netcdf import netcdf as nclib
-from gdio.commons import near_yx, objectify
-
-import warnings
 
 warnings.filterwarnings("ignore")
 
@@ -164,8 +163,7 @@ class gdio(object):
                         level_type=level_type),
                 files):
 
-
-            if not _dat is None:
+            if _dat:
 
                 ref_time = _dat.get('ref_time')
 
@@ -274,7 +272,6 @@ class gdio(object):
                     data = dict()
 
             else:
-
                 # in case of missing file ................
                 for k in data.keys():
 
