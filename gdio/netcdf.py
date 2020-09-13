@@ -3,18 +3,19 @@ __date__ = "2020.Set"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.4"
+__version__ = "version 0.1.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
 
+import logging
 import re
+from datetime import datetime
+
 import numpy as np
 from netCDF4 import Dataset
-import logging
 
-from gdio.commons import near_yx, objectify, dict_get
-from datetime import datetime
+from gdio.commons import near_yx, objectify
 
 
 class netcdf(object):
@@ -45,8 +46,7 @@ class netcdf(object):
         self.time_units = None
         self.history = None
 
-        logging.basicConfig(handlers=[logging.StreamHandler()],
-                            datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
+        logging.basicConfig(datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
                             format='[%(levelname)s @ %(asctime)s] %(message)s')
 
 
