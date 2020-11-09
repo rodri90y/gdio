@@ -2,12 +2,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='gdio',
-    version='0.1.5',
+    version='0.1.6',
     description='Gridded data io library',
     long_description='Gridded data io library. Grib and netcdf files handler, ',
     long_description_content_type='text/markdown',
     url='https://github.com/rodri90y/gdio',
-    download_url="https://github.com/rodri90y/gdio/archive/v0.1.5.tar.gz",
+    download_url="https://github.com/rodri90y/gdio/archive/v0.1.6.tar.gz",
     license='MIT',
     packages=find_packages(),
     author='Rodrigo Yamamoto',
@@ -19,5 +19,5 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-    install_requires=['numpy','netCDF4','texttable','pygrib'],
+    install_requires=['numpy','netCDF4','eccodes'],
 )

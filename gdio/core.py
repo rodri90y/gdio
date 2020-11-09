@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2020.Set"
+__date__ = "2020.Nov"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.5"
+__version__ = "version 0.1.6"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -218,7 +218,7 @@ class gdio(object):
 
 
                     # convert to day unity
-                    if _dat.get('time_units') in ['hours', 'hrs']:
+                    if _dat.get('time_units').lower() in ['hour', 'hours', 'hrs']:
                         t_units = 1 / 24
                     else:
                         t_units = 1
@@ -240,6 +240,7 @@ class gdio(object):
 
                             elif k in self.__fields_time:                                          # merge datetime field
                                 _time = ref_time + vf(_dat.get('time'), t_units)
+
                                 try:
                                     data[k] = np.concatenate((data[k], _time))
                                 except Exception as e:

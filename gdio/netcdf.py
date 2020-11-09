@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2020.Set"
+__date__ = "2020.Nov"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.5"
+__version__ = "version 0.1.6"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -45,6 +45,8 @@ class netcdf(object):
         self.time = None
         self.time_units = None
         self.history = None
+        self.centre = 0
+        self.grid_description = None
 
         logging.basicConfig(datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
                             format='[%(levelname)s @ %(asctime)s] %(message)s')
@@ -87,7 +89,7 @@ class netcdf(object):
             for key in _nc.variables.keys():
                 if key in self.__fields_time:
                     self.coordinates.append('time')
-                    self.time_units = _nc.variables[key].units
+                    self.time_units = _nc.variables[key].units  #checar
                     self.time = _nc.variables[key][:].astype(int)
 
                 elif key in self.__fields_longitude:
@@ -211,7 +213,6 @@ class netcdf(object):
                     data.update({key: self.lat})
                 elif key in self.__fields_longitude:
                     data.update({key: self.lon})
-
 
             _nc.close()
 
