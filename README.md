@@ -21,9 +21,8 @@ conda config --add channels conda-forge
 
 + Python (3.6 or later)
 + numpy (1.18.4 or later)
-+ pygrib (2.0.4 or later)
++ eccodes (2.12.3 or later)
 + netCDF4 (1.5.1.2 or later)
-+ Texttable (1.6.2 or later)
 
 #### Optional dependencies
 + scipy (1.4.1 or later)
@@ -136,17 +135,23 @@ Reading a subsample in time (time 12-24) and space (bbox -30,-60 and 10,-40)
 ds = gr.gb_load('data/era5_20191226-27_lev.grib', cut_domain=(-30, -60, 10, -40), cut_time=(12, 24))
 ```
 
-Listing the grib content
-
-```
-gr.gb_info(ifile)
-```
-
 Setting the ensemble grouping grib id key
 
 ```
 gr.fields_ensemble = 'perturbationNumber'
 gr.fields_ensemble_exception = [0]
+```
+
+Filtering by a grib key, dict with grib parameters at form of pair key:
+values (list or single values)
+eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]}
+                            or filter_by={'gridType': 'regular_ll'}
+
+```
+ds = gr.gb_load('data/era5_20191226-27_lev.grib', 
+                cut_domain=(-30, -60, 10, -40), 
+                cut_time=(12, 24), 
+                filter_by={'perturbationNumber': 0)
 ```
 
 ### Reading multiple files
