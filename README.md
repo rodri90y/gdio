@@ -19,10 +19,13 @@ if you are using pip install, before install manually the requirements
 
 conda config --add channels conda-forge
 
-+ Python (3.6 or later)
++ Python (3.7.* or later)
 + numpy (1.18.4 or later)
-+ eccodes (2.12.3 or later)
 + netCDF4 (1.5.1.2 or later)
++ eccodes (2.12.3 or later)
++ python-eccodes
++ pyproj
+
 
 #### Optional dependencies
 + scipy (1.4.1 or later)
@@ -118,15 +121,15 @@ gr = grib(verbose=False)
 ds = gr.gb_load('data/era5_20191226-27_lev.grib')
 
 >>> print(ds.u.value.shape)
-(2, 7, 161, 241)
+(4, 7, 161, 241)
 >>> print(ds.u.type_level)
-millibars
+isobaricInhPa
 >>> print(ds.u.level)
 [200, 300, 500, 700, 800, 950, 1000]
 >>> print(ds.u.parameter_units)
 m s**-1
 >>> print(ds.u.param_id)
-None
+131
 ```
 
 Reading a subsample in time (time 12-24) and space (bbox -30,-60 and 10,-40)
@@ -151,7 +154,7 @@ eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]}
 ds = gr.gb_load('data/era5_20191226-27_lev.grib', 
                 cut_domain=(-30, -60, 10, -40), 
                 cut_time=(12, 24), 
-                filter_by={'perturbationNumber': 0)
+                filter_by={'perturbationNumber': 0})
 ```
 
 ### Reading multiple files

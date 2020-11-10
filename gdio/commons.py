@@ -1,5 +1,7 @@
-import numpy as np
 import difflib
+
+import numpy as np
+
 
 class objectify(dict):
     """ Nested Attribute Dictionary
@@ -18,16 +20,28 @@ class objectify(dict):
     def __setitem__(self, key, value):
         if isinstance(value, dict):
             value = objectify(value)
+
         super(objectify, self).__setitem__(key, value)
-        self.__dict__[key] = value  # for code completion in editors
+        self.__dict__[key] = value
 
-    def __getattr__(self, item):
-        try:
-            return self.__getitem__(item)
-        except KeyError:
-            raise AttributeError(item)
+    def __setattr__(self, key, value):
+        object.__setattr__(self, key, value)
 
-    __setattr__ = __setitem__
+    def __getitem__(self, x):
+        return getattr(self, x)
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def items(self):
+        return self.__dict__.items()
+
+    def get(self, key, default=None):
+        return self[key] if key in self.keys() else default
+
+    def update(self, value, **kwargs):
+        return self.__dict__.update(value, **kwargs)
+
 
 def near_yx(data, lats=None, lons=None):
     '''

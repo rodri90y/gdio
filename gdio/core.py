@@ -57,7 +57,7 @@ class gdio(object):
 
 
 
-    def thread(self, ifile, vars=None, cut_time=None, cut_domain=None, level_type=None):
+    def thread(self, ifile, vars=None, cut_time=None, cut_domain=None, level_type=None, filter_by={}):
         '''
         Load and cutting function
         :param ifile:               string
@@ -71,6 +71,10 @@ class gdio(object):
                                     ex.: (-45,-90,20,-30)/(-45,None,20,-30)/(None,-90,None,-20)
         :level_type:                list
                                     type of level (hybrid, isobaricInhPa, surface)
+        :param filter_by:           dictonary
+                                    dict with grib parameters at form of pair key:values (list or single values)
+                                    eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]}
+                                    or filter_by={'gridType': 'regular_ll'}
         :return:                    dictionary
         '''
 
@@ -90,7 +94,8 @@ class gdio(object):
                 _data = gb.gb_load(ifile, vars=vars,
                                      cut_time=cut_time,
                                      cut_domain=cut_domain,
-                                     level_type=level_type)
+                                     level_type=level_type,
+                                     filter_by=filter_by)
 
             else:
                 _data = nc.nc_load(ifile, vars=vars,
@@ -114,6 +119,7 @@ class gdio(object):
               cut_time=None,
               cut_domain=None,
               level_type=None,
+              filter_by={},
               uniformize_grid=True,
               vars=None,
               inplace=False):
@@ -132,8 +138,12 @@ class gdio(object):
         :param cut_domain:          tuple
                                     range of latitudes and longitudes to cut: (lat1, lon1, lat2, lon2)
                                     ex.: (-45,-90,20,-30)/(-45,None,20,-30)/(None,-90,None,-20)
-        :level_type:                list
+        :param level_type:          list
                                     type of level (hybrid, isobaricInhPa, surface)
+        :param filter_by:           dictonary
+                                    dict with grib parameters at form of pair key:values (list or single values)
+                                    eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]}
+                                    or filter_by={'gridType': 'regular_ll'}
         :return:                    list of dictionaries
         '''
 
@@ -159,7 +169,8 @@ class gdio(object):
                 partial(self.thread, vars=vars,
                         cut_time=cut_time,
                         cut_domain=cut_domain,
-                        level_type=level_type),
+                        level_type=level_type,
+                        filter_by=filter_by),
                 files):
 
             if _dat:
