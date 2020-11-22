@@ -2,17 +2,17 @@ from setuptools import setup, find_packages
 
 setup(
     name='gdio',
-    version='0.1.6',
+    version='0.1.8',
     description='Gridded data io library',
     long_description='Gridded data io library. Grib and netcdf files handler, ',
     long_description_content_type='text/markdown',
     url='https://github.com/rodri90y/gdio',
-    download_url="https://github.com/rodri90y/gdio/archive/v0.1.6.tar.gz",
+    download_url="https://github.com/rodri90y/gdio/archive/v0.1.8.tar.gz",
     license='MIT',
     packages=find_packages(),
     author='Rodrigo Yamamoto',
     author_email='codes@rodrigoyamamoto.com',
-    keywords=['gdio','grib','netcdf'],
+    keywords=['gdio', 'grib', 'netcdf'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

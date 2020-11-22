@@ -3,7 +3,7 @@ __date__ = "2020.Nov"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.7"
+__version__ = "version 0.1.8"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -259,7 +259,7 @@ class grib(object):
                                                 'parameter_units': gr.parameterUnits,
                                                 'latitude': self.lat,
                                                 'longitude': self.lon
-                                            }
+                                    }
 
                                     if idVar in _data.keys():
                                         _data[idVar].update(__tmp)
@@ -268,16 +268,14 @@ class grib(object):
                                         _data[idVar] = __tmp
                                         _data[idVar].level_type = [typLev]
 
-
-                    # consolidate data for last time block  ................
-                    if n + 1 == len(msg):
-                        data = self.__concat_time(_data, data)
+                # consolidate data for last time block  ................
+                if n + 1 == len(msg):
+                    data = self.__concat_time(_data, data)
 
                 self.variables = list(data.keys())
                 self.coordinates.append('latitude')
                 self.coordinates.append('longitude')
                 self.coordinates.append('level')
-
 
         except Exception as e:
             logging.error('''gdio.gb_load > {0}'''.format(e))

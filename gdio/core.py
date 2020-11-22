@@ -3,7 +3,7 @@ __date__ = "2020.Nov"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.6"
+__version__ = "version 0.1.8"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -242,12 +242,11 @@ class gdio(object):
                                         except Exception as e:
                                             logging.error('''gdio.mload > error @ {0} - {1}'''.format(key, e))
                                 else:
-
                                     if key in data.keys():  # in case of multiples level per variable
-                                        print(key, '__')
                                         data[key].update(val)
                                     else:
                                         data[key] = val
+
 
                     else:  # all parameters except variables
 
