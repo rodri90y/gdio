@@ -83,7 +83,7 @@ Simple reading
 from gdio.netcdf import netcdf
 nc = netcdf(verbose=False)
 
-ds = nc.nc_load('data/era5_20191227_lev.nc')
+ds = nc.nc_load('tests/data/era5_20191227_lev.nc')
 >>> ds.keys()
 dict_keys(['ref_time', 'time_units', 'time', 'r', 't', 'u', 'v'])
 >>> print(ds.u.isobaricInhPa.value.shape)
@@ -249,6 +249,15 @@ ds.fields_ensemble = 'perturbationNumber'
 ds.fields_ensemble_exception = [0]
 ```
 
+### Selecting a sub sample in mload dataset
+Select data by coordinates (date, latitude, longitude, levels and members)
+
+```
+sub_set = ds.sel(dates=[datetime(2019,12,26,12,0)], latitude=[-23.54,-22], longitude=[-46.64,-42.2], level=[2,6])
+
+>>> print(sub_set[0].get('u').isobaricInhPa.value.shape)
+(1, 1, 4, 6, 18)
+```
 ## Release History
 
 
@@ -258,7 +267,7 @@ Rodrigo Yamamoto codes@rodrigoyamamoto.com
 https://github.com/rodri90y/gdio
 
 ## Contributing
-* 0.1.8
+* 0.1.8.1
     * alpha release
     
 

@@ -3,7 +3,7 @@ __date__ = "2020.Nov"
 __credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8"
+__version__ = "version 0.1.8.1"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -38,8 +38,8 @@ class netcdf(object):
                                 'sigmaLevel': ['sigma'],
                                 'surface': []
                               }
-        self.__fields_order = ['ensemble','time','latitude','longitude']
-        self.__fields_order.insert(-2, sum(self.__fields_level.values(),[])[0])
+        self.__fields_order = ['ensemble', 'time', 'latitude', 'longitude']
+        self.__fields_order = self.__fields_order[:2] + sum(self.__fields_level.values(), []) + self.__fields_order[2:]
 
         self.lon = None
         self.lat = None
@@ -113,10 +113,11 @@ class netcdf(object):
                     if flip_lat:
                         self.lat = np.flip(self.lat, axis=0)
 
-
                 elif key.lower() in sum(self.__fields_level.values(), []):
                     typeLev = [k for k, v in self.__fields_level.items() if key in v][0]
+                    self.levels['surface'] = [0]
                     self.levels[typeLev] = list(_nc.variables[key][:].astype(int))
+
 
             # cut time ..............................
             if cut_time is not None and self.time is not None:
@@ -128,6 +129,7 @@ class netcdf(object):
 
                     start, stop = np.where((self.time >= start) & (self.time <= stop))[0][[0, -1]]
                     stop += 1  # one Kadan, to honor the Hebrew God
+
 
             # select spatial subdomain ............
 
@@ -153,6 +155,7 @@ class netcdf(object):
                                 break
                         except:
                             break
+
 
             # trim lat/lon dimensions
             self.lat = self.lat[y[0]:y[1]]
@@ -190,7 +193,6 @@ class netcdf(object):
                         _data = np.roll(_data, cut_domain_roll, axis=-1)
 
                         typLev = self.__gettypLev(val)
-                        levels = self.levels[typLev]
 
                         if (level_type is None or typLev in level_type):
 
@@ -213,7 +215,7 @@ class netcdf(object):
                             __tmp = {
                                 typLev: {
                                     'value': _data[:, start:stop, :, y[0]:y[1], x[0]:x[1]],
-                                    'level': levels
+                                    'level': self.levels[typLev]
                                 },
                                 'param_id': None,
                                 'long_name': self.get_attr(val, 'long_name'),
@@ -315,20 +317,22 @@ class netcdf(object):
             else:
 
                 if isinstance(val, dict):
-
+                    z_dims = list()
                     for typLev in val.level_type:
-                        level_id = self.__fields_level.get(typLev)[0]
+                        level_id = self.__fields_level.get(typLev)[:1]
+
+                        z_dims = level_id if not z_dims == level_id else z_dims
 
                         # create multiples z axis dimensions
                         if 'level_type' in val.keys():
-                            if not level_id in _nc.dimensions:
-                                _nc.createDimension(level_id, len(val[typLev].level))
-                                level = _nc.createVariable(level_id, 'f8', (level_id,), zlib=zlib)
+                            if level_id and level_id[0] not in _nc.dimensions:
+                                _nc.createDimension(level_id[0], len(val[typLev].level))
+                                level = _nc.createVariable(level_id[0], 'f8', (level_id[0],), zlib=zlib)
                                 level[:] = val[typLev].level
                                 level.units = typLev
-                                level.axis = 'Z'
+                                level.axis = 'z' if level_id[0] in ['level'] else 'e'
                                 level.filling = 'off'
-                                dims.append(level_id)
+
 
                         # add latitude dimension
                         if any(k in val.keys() for k in self.__fields_latitude):
@@ -373,18 +377,25 @@ class netcdf(object):
                                         ens.axis = 'e'
                                         dims.append('ensemble')
 
-                                    _data = val[typLev].value
-                                else:
-                                    _data = val[typLev].value[0]
-
-                                #variable setup
+                                # variable setup
                                 ncvar = _nc.createVariable(key, "f8",
-                                                   sorted(dims, key=lambda d: self.__fields_order.index(d)),
-                                                   zlib=True)
+                                                           sorted(dims + z_dims,
+                                                                  key=lambda d: self.__fields_order.index(d)),
+                                                           zlib=True)
 
-                                ncvar[:] = _data
+                                if 'ensemble' in _nc.dimensions:
+                                    if len(dims + z_dims) == 5:
+                                        ncvar[:] = val[typLev].value[:, :, :, :, :]  # level data
+                                    elif len(dims + z_dims) == 4:
+                                        ncvar[:] = val[typLev].value[:, :, 0, :, :]  # surface data
+                                else:
+                                    if len(dims + z_dims) == 4:
+                                        ncvar[:] = val[typLev].value[0, :, :, :, :]  # level data
+                                    elif len(dims + z_dims) == 3:
+                                        ncvar[:] = val[typLev].value[0, :, 0, :, :]  # surface data
+
                                 ncvar.missing_value = 9.999e20
-                                ncvar.units = val.get('parameter_units')
+                                ncvar.units = str(val.get('parameter_units'))
 
         _nc.close()
 
