@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2020.Nov"
-__credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
+__date__ = "2020.Dez"
+__credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.1"
+__version__ = "version 0.1.8.2"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -252,7 +252,7 @@ class gdio(object):
 
                         # set datetime field
                         if key in self.__fields_time:
-                            if key in data.keys():                                      # merge datetime field
+                            if key in data.keys():  # merge datetime field
                                 try:
                                     _time = ref_time + vf(_dat.get('time'), t_units)
                                     data[key] = np.concatenate((data[key], _time))
@@ -260,10 +260,10 @@ class gdio(object):
                                     logging.error('''gdio.mload > error @ {0} - {1}'''.format(key, e))
                             else:
                                 data['time'] = ref_time + vf(_dat.get('time'), t_units)
-                                data['ref_time'] = [_dat.get('ref_time')]
+                                data['ref_time'] = _dat.get('ref_time')
                         else:
-                            data[key] = val
-
+                            if key not in data.keys():
+                                data[key] = val
 
                 # do not merge files option ..............
                 if not merge_files:

@@ -27,6 +27,7 @@ class TestNcFiles(unittest.TestCase):
     def setUp(self):
 
         self.expected_dim = (1, 4, 7, 160, 80)
+        self.expected_ref_time = datetime(2019, 12, 26, 0, 0)
         self.expected_times = [datetime(2019, 12, 26, 12, 0), datetime(2019, 12, 27, 0, 0),
                                datetime(2019, 12, 27, 12, 0), datetime(2019, 12, 27, 12, 0)]
         self.expected_coordinate = ([26], [53])
@@ -61,14 +62,16 @@ class TestNcFiles(unittest.TestCase):
                          'level type of u variable incorrect')
 
     def test_grib_varible_units(self):
-
         self.assertEqual(self.ds.dataset[0].get('u').parameter_units, self.expected_units,
                          'units of u variable incorrect')
 
-    def test_grid_cut_time(self):
+    def test_grib_ref_time(self):
+        self.assertEqual(self.ds.dataset[0].get('ref_time'), self.expected_ref_time,
+                         'incorrect ref_time')
 
+    def test_grid_cut_time(self):
         self.assertListEqual(list(self.ds.dataset[0].get('time')), self.expected_times,
-                         'incorrect time cut')
+                             'incorrect time cut')
 
     def test_grid_interpolation(self):
         a = self.ds.dataset[0].get('u').isobaricInhPa.value[0, 2, -1].flatten()
