@@ -7,6 +7,7 @@ class cgrib():
 
     def __init__(self, gid, gribkeys=None):
 
+        self.perturbationNumber = 0
 
         _gribkeys = [
             'centre',
@@ -20,20 +21,7 @@ class cgrib():
             'level',
             'shortName',
             'name',
-            'parameterUnits',
-            'gridType',
-            'latitudeOfFirstGridPointInDegrees', 'longitudeOfFirstGridPointInDegrees',
-            'latitudeOfLastGridPointInDegrees', 'longitudeOfLastGridPointInDegrees',
-            'Ni', 'Nj',
-            'iDirectionIncrementInDegrees', 'jDirectionIncrementInDegrees',
-            'truncateDegrees', 'grib2divider',
-            'angleOfRotationInDegrees', 'latitudeOfSouthernPoleInDegrees', 'longitudeOfSouthernPoleInDegrees',
-            'latitudeWhereDxAndDyAreSpecifiedInDegrees', 'projectionCentreFlag', 'orientationOfTheGridInDegrees',
-            'LoVInDegrees', 'LaDInDegrees', 'Latin1InDegrees', 'Latin2InDegrees',
-            'DxInMetres', 'DyInMetres', 'iScansPositively', 'jScansPositively',
-            'shapeOfTheEarth', 'radius', 'scaledValueOfEarthMajorAxis', 'scaledValueOfEarthMinorAxis',
-            'LaD', 'Latin',
-            'perturbationNumber','scaleFactorOfRadiusOfSphericalEarth'
+            'parameterUnits'
         ]
 
         self.gridkeys = [
@@ -83,8 +71,8 @@ class cgrib():
         if isinstance(self.values, np.ndarray):
             self.values = self.values.reshape(self.Nj, self.Ni)
 
-
         self.projparams = self._set_projparams()
+
 
     def __new__(cls, *args, **kwargs):
         instance = object.__new__(cls)

@@ -1,6 +1,6 @@
 package:
   name: gdio
-  version: 0.1.5
+  version: 0.1.6
 
 source:
   path: ../gdio
@@ -11,16 +11,17 @@ requirements:
     - setuptools
     - numpy
     - netCDF4
-    - pygrib
-    - texttable
+    - python-eccodes
+    - eccodes
+    - pyproj
 
   run:
     - python
     - numpy
     - netCDF4
-    - pygrib
-    - texttable
-
+    - python-eccodes
+    - eccodes
+    - pyproj
 
 about:
   home: https://github.com/rodri90y/gdio

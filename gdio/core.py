@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2020.Nov"
-__credits__ = ["Rodrigo Yamamoto","Carlos Oliveira","Igor"]
+__date__ = "2020.Dez"
+__credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.6"
+__version__ = "version 0.1.8.2"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -57,7 +57,7 @@ class gdio(object):
 
 
 
-    def thread(self, ifile, vars=None, cut_time=None, cut_domain=None, level_type=None):
+    def thread(self, ifile, vars=None, cut_time=None, cut_domain=None, level_type=None, filter_by={}):
         '''
         Load and cutting function
         :param ifile:               string
@@ -71,6 +71,10 @@ class gdio(object):
                                     ex.: (-45,-90,20,-30)/(-45,None,20,-30)/(None,-90,None,-20)
         :level_type:                list
                                     type of level (hybrid, isobaricInhPa, surface)
+        :param filter_by:           dictonary
+                                    dict with grib parameters at form of pair key:values (list or single values)
+                                    eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]}
+                                    or filter_by={'gridType': 'regular_ll'}
         :return:                    dictionary
         '''
 
@@ -87,21 +91,16 @@ class gdio(object):
             nc = nclib(verbose=self.verbose)
 
             if gb.is_grib(ifile):
-                _data = gb.gb_load(ifile, vars=vars,
+                return gb.gb_load(ifile, vars=vars,
+                                     cut_time=cut_time,
+                                     cut_domain=cut_domain,
+                                     level_type=level_type,
+                                     filter_by=filter_by)
+            else:
+                return nc.nc_load(ifile, vars=vars,
                                      cut_time=cut_time,
                                      cut_domain=cut_domain,
                                      level_type=level_type)
-
-            else:
-                _data = nc.nc_load(ifile, vars=vars,
-                                     cut_time=cut_time,
-                                     cut_domain=cut_domain)
-
-            if any(x in ['lon', 'lat'] for x in _data.keys()):
-                _data['longitude'] = _data.pop('lon')
-                _data['latitude'] = _data.pop('lat')
-
-            return _data
 
         else:
             logging.warning('''[PID:{0}] io.thread > missing file: {1}'''.format(os.getpid(),ifile))
@@ -110,12 +109,13 @@ class gdio(object):
 
     def mload(self,
               files,
+              vars=None,
               merge_files=True,
               cut_time=None,
               cut_domain=None,
               level_type=None,
+              filter_by={},
               uniformize_grid=True,
-              vars=None,
               inplace=False):
         '''
         Load multiple grib/netcdf files
@@ -132,8 +132,15 @@ class gdio(object):
         :param cut_domain:          tuple
                                     range of latitudes and longitudes to cut: (lat1, lon1, lat2, lon2)
                                     ex.: (-45,-90,20,-30)/(-45,None,20,-30)/(None,-90,None,-20)
-        :level_type:                list
+        :param level_type:          list
                                     type of level (hybrid, isobaricInhPa, surface)
+        :param filter_by:           dictonary
+                                    dict with grib parameters at form of pair key:values (list or single values)
+                                    eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]}
+                                    or filter_by={'gridType': 'regular_ll'}
+        :param rename_vars:         dictonary
+                                    rename variables names (key) for a new name (value).
+                                    Eg. {'tmpmdl': 't', 'tmpprs': 't'}
         :return:                    list of dictionaries
         '''
 
@@ -155,67 +162,26 @@ class gdio(object):
         if isinstance(files, str):
             files = [files]
 
+
         for _dat in pool.map(
                 partial(self.thread, vars=vars,
                         cut_time=cut_time,
                         cut_domain=cut_domain,
-                        level_type=level_type),
+                        level_type=level_type,
+                        filter_by=filter_by),
                 files):
 
             if _dat:
 
                 ref_time = _dat.get('ref_time')
 
-                for k in _dat.keys():
-
-                    if (vars is None or k in vars) \
-                            and not k in ['latitude', 'longitude', 'lat', 'lon',
-                                          'level', 'ref_time', 'time', 'time_units']:
-
-                        # redim the data array ...........
-                        if _dat[k].value.ndim == 2:
-                            _dat[k] = _dat[k].value[None, None, :, :]
-                        elif _dat[k].value.ndim == 3:
-                            _dat[k] = _dat[k].value[:, None, :, :]
+                # setting the standard projection/dimensions
+                if not griddes:
+                    lons_n, lats_n = self.__get_dims(_dat, vars)
+                    griddes = lats_n.shape + lons_n.shape
 
 
-                        if not griddes:
-                            griddes = _dat[k].value.shape
-                            lons_n, lats_n = _dat.get('longitude'), _dat.get('latitude')
-
-
-                        # uniformize all grids ...........
-                        if uniformize_grid:
-
-                                # grid resample
-                            if _dat[k].value.ndim > 2 and \
-                                    not _dat[k].value.shape[1:] == griddes[1:]:
-
-                                logging.info('''gdio.mload > auto remapping grid @ {0}'''.format(k))
-
-                                # interpolate through z dimension .........
-                                _tmp = np.ones(_dat[k].value.shape[:1]+griddes[1:]) * np.nan
-
-                                # WARNING: If the z dimension of the source data is different
-                                # from that of the ref data, the interpolated level data may not
-                                # represent the same z as the ref data
-                                for z in range(_tmp.shape[1]):
-                                    try:
-
-                                        _tmp[:,z,:,:] = self.remapbil(_dat[k].value[:,z,:,:],
-                                                                         _dat.get('longitude'), _dat.get('latitude'),
-                                                                         lons_n, lats_n, order=1, masked=True)
-
-                                    except Exception as e:
-                                        logging.error('''gdio.mload > auto remapping grid error {0}'''.format(e))
-
-                                _dat[k].value = _tmp
-
-                                del _tmp
-
-                        # update the lat/lon dimensions
-                        data['longitude'], data['latitude'] = lons_n, lats_n
-
+                for key, val in _dat.items():
 
                     # convert to day unity
                     if _dat.get('time_units').lower() in ['hour', 'hours', 'hrs']:
@@ -223,69 +189,108 @@ class gdio(object):
                     else:
                         t_units = 1
 
-                    # merge files ........................
-                    if merge_files:
+                    if (vars is None or key in vars) \
+                            and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:
 
-                        if k in data.keys():
+                        for typLev in val.level_type:
 
-                            if not (k in self.__fields_latitude
-                                    or k in self.__fields_longitude
-                                    or k in self.__fields_time
-                                    or k in self.__fields_level
-                                    or k in ['ref_time', 'time_units']):                            # merge variable field
-                                try:
-                                    data[k].value = np.concatenate((data[k].value, _dat[k].value))
-                                except Exception as e:
-                                    logging.error('''gdio.mload > error @ {0} - {1}'''.format(k, e))
+                            # uniformize all grids ...........
+                            if uniformize_grid:
 
-                            elif k in self.__fields_time:                                          # merge datetime field
-                                _time = ref_time + vf(_dat.get('time'), t_units)
+                                # grid resample, if spatial dimensions are different of first grid(z,lat,lon)
+                                if not val[typLev].value.shape[3:] == griddes:
 
-                                try:
-                                    data[k] = np.concatenate((data[k], _time))
-                                except Exception as e:
-                                    logging.error('''gdio.mload > error @ {0} - {1}'''.format(k, e))
-                        else:
-                            data[k] = _dat[k]
+                                    logging.info('''gdio.mload > auto remapping grid @ {0}'''.format(key))
 
-                            # set datetime field
-                            if k in self.__fields_time:
-                                data['time'] = ref_time + vf(_dat.get('time'), t_units)
-                                data['ref_time'] = [_dat.get('ref_time')]
+                                    # interpolate through z dimension .........
+                                    _tmp = np.ones(val[typLev].value.shape[:3]+griddes) * np.nan
 
-                    else:
-                        data[k] = _dat[k]
+                                    # WARNING: If the z dimension of the source data is different
+                                    # from that of the ref data, the interpolated level data may not
+                                    # represent the same z as the ref data
+                                    for m in range(_tmp.shape[0]):
+                                        for z in range(_tmp.shape[2]):
+                                            try:
+                                                _tmp[m,:,z,:,:] = self.remapbil(val[typLev].value[m,:,z,:,:],
+                                                                                 val.longitude, val.latitude,
+                                                                                 lons_n, lats_n, order=1, masked=True)
+                                            except Exception as e:
+                                                logging.error('''gdio.mload > auto remapping grid error {0}'''.format(e))
+
+                                    val[typLev].value = _tmp
+
+                                    del val.longitude, val.latitude
+                                    del _tmp
+
+                            # update the lat/lon dimensions
+                            data['longitude'], data['latitude'] = lons_n, lats_n
+
+                            # merge files ........................
+                            if merge_files:
+
+                                if key in data.keys() and typLev in data[key].keys():
+
+                                    if not (key in self.__fields_latitude
+                                            or key in self.__fields_longitude
+                                            or key in self.__fields_time
+                                            or key in self.__fields_level
+                                            or key in ['ref_time', 'time_units']):                            # merge variable field
+
+                                        try:
+                                            data[key][typLev].value = np.concatenate((data[key][typLev].value,
+                                                                                      val[typLev].value), axis=1)
+                                        except Exception as e:
+                                            logging.error('''gdio.mload > error @ {0} - {1}'''.format(key, e))
+                                else:
+                                    if key in data.keys():  # in case of multiples level per variable
+                                        data[key].update(val)
+                                    else:
+                                        data[key] = val
+
+
+                    else:  # all parameters except variables
 
                         # set datetime field
-                        if k in self.__fields_time:
-                            data['time'] = ref_time + vf(_dat.get('time'), t_units)
-                            data['ref_time'] = [_dat.get('ref_time')]
-
+                        if key in self.__fields_time:
+                            if key in data.keys():  # merge datetime field
+                                try:
+                                    _time = ref_time + vf(_dat.get('time'), t_units)
+                                    data[key] = np.concatenate((data[key], _time))
+                                except Exception as e:
+                                    logging.error('''gdio.mload > error @ {0} - {1}'''.format(key, e))
+                            else:
+                                data['time'] = ref_time + vf(_dat.get('time'), t_units)
+                                data['ref_time'] = _dat.get('ref_time')
+                        else:
+                            if key not in data.keys():
+                                data[key] = val
 
                 # do not merge files option ..............
                 if not merge_files:
-
                     data.update({'time': ref_time + vf(_dat.get('time'), t_units)})
                     data.update({'ref_time': [_dat.get('ref_time')]})
 
                     self.dataset.append(data)
-                    data = dict()
+                    data = objectify()
 
             else:
                 # in case of missing file ................
-                for k in data.keys():
+                for key in data.keys():
 
-                    if not (k in self.__fields_latitude
-                            or k in self.__fields_longitude
-                            or k in self.__fields_time
-                            or k in self.__fields_level
-                            or k in ['ref_time', 'time_units']):
-                        data[k].value = np.concatenate((data[k].value, [data[k].value[-1] * np.nan]))
-                    elif k in self.__fields_time:
-                        data[k] = np.concatenate((data[k], [data[k][-1] + timedelta(days=t_units)]))
-                    elif k in ['ref_time']:
+                    if not (key in self.__fields_latitude
+                            or key in self.__fields_longitude
+                            or key in self.__fields_time
+                            or key in self.__fields_level
+                            or key in ['ref_time', 'time_units']):
+                        for typLev in val.level_type:
+                            data[key][typLev].value = np.concatenate((data[key][typLev].value,
+                                                            np.ones((1,1)+data[key][typLev].value.shape[2:]) * np.nan),
+                                                            axis=1)
+                    elif key in self.__fields_time:
+                        data[key] = np.concatenate((data[key], [data[key][-1] + timedelta(days=t_units)]))
+                    elif key in ['ref_time']:
                         ref_time += timedelta(days=t_units)
-                        data[k] = np.concatenate((data[k], [ref_time]))
+                        data[key] = np.concatenate((data[key], [ref_time]))
 
                 logging.warning('''io.load_nc > missing file applying null grid''')
 
@@ -294,12 +299,12 @@ class gdio(object):
         self.coordinates.append('longitude')
         self.coordinates.append('level')
 
-
         if inplace:
             if data:
                 self.dataset.append(data)
         else:
             return data
+
 
     def sel(self,
             __data=None,
@@ -307,9 +312,10 @@ class gdio(object):
             longitude=None,
             dates=None,
             level=None,
+            member=None,
             date_format='%Y-%m-%d %H:%M'):
         '''
-        Select data by coordinates (date, latitude, longitude and levels)
+        Select data by coordinates (date, latitude, longitude, levels and members)
 
         :param __data:       list of dictionaries
                              raw dataset
@@ -320,14 +326,16 @@ class gdio(object):
         :param longitude:    list of floats
                              range of longitudes to select: [lon1, lon2]
                              especific longitudes (1 or >2) [lon1, lon2, lon3, ...]
-        :param dates:        list of floats
+        :param dates:        list of datetime/string
                              datetime/string date
                              range of dates to select: [date1, date2]
                              especific dates (1 or >2) [date1, date2, date3, ...]
-        :param level:        list of floats
+        :param level:        list of int
                              range of levels to select: [level1, level2]
                              especific levels (1 or >2) [level1, level2, level3, ...]
-
+        :param member:       list of int
+                             range of levels to select: [member, member]
+                             especific levels (1 or >2) [level1, level2, level3, ...]
         return               dict
         '''
 
@@ -349,7 +357,7 @@ class gdio(object):
                         dates[i] = datetime.strptime(dt, date_format)
 
                 if len(dates) == 2:
-                    t = np.where((_dat.get('time') >= dates[0]) & (_dat.get('time') <= dates[1]))
+                    t = (_dat.get('time') >= dates[0]) & (_dat.get('time') <= dates[1])
                 elif len(dates) > 0:
                     t = np.isin(_dat.get('time'), dates)
 
@@ -361,72 +369,79 @@ class gdio(object):
 
             for k, v in _dat.items():
 
+                # cutting data array
                 if isinstance(v, dict):
-                    # if isinstance(v.get('value'), np.ndarray):
 
-                        if k in ['latitude']:                       # latitude coordinate
+                    for typLev in v.level_type:
 
-                            if y:
-                                if len(y) == 2:
-                                    _dat[k] = _dat[k][y[0]:y[1]]
-                                else:
-                                    _dat[k] = _dat[k][y]
+                        # cut data in longitude dimension
+                        if x:
+                            if len(x) == 2:
+                                _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, :, x[0]:x[1]]
+                            elif len(x) == 1:
+                                _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, :, x[0]]
+                            else:
+                                _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, :, x]
 
-                        elif k in ['longitude']:                    # longitude coordinate
+                        # cut data in latitude dimension
+                        if y:
+                            if len(y) == 2:
+                                _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, y[0]:y[1]]
+                            elif len(y) == 1:
+                                _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, y[0]]
+                            else:
+                                _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, y]
 
-                            if x:
-                                if len(x) == 2:
-                                    _dat[k] = _dat[k][x[0]:x[1]]
-                                else:
-                                    _dat[k] = _dat[k][x]
+                        # cut data in levels dimension
+                        if z:
+                            if len(z) == 2:
+                                _dat[k][typLev].value = _dat[k][typLev].value[:, :, z[0]:z[1]]
+                                _dat[k][typLev].level = _dat[k][typLev].level[z[0]:z[1]]
+                            else:
+                                try:
+                                    _dat[k][typLev].value = _dat[k][typLev].value[:, :, z]
+                                    _dat[k][typLev].level = list(map(_dat[k][typLev].level.__getitem__, z))
+                                except:
+                                    _dat[k][typLev].value = _dat[k][typLev].value[:, :, -1]
+                                    _dat[k][typLev].level = _dat[k][typLev].level[-1]
 
-                        elif k in ['time']:                         # time coordinate
 
-                            if dates:
-                                _dat[k] = _dat[k][t]
+                        # cut data in time dimension
+                        if dates:
+                            _dat[k][typLev].value = _dat[k][typLev].value[:, t]
 
-                        elif k in ['level']:                        # level coordinate
-                            if z:
-                                if len(z) == 2:
-                                    _dat[k] = _dat[k][z[0]:z[1]]
-                                else:
-                                    _dat[k] = _dat[k][z]
+                        # cut data in member dimension
+                        if member:
+                            _dat[k][typLev].value = _dat[k][typLev].value[member]
 
-                        elif not k in ['ref_time']:                 # variables (non coordinates)
 
-                            # cut longitude
-                            if x:
-                                if len(x) == 2:
-                                    _dat[k].value = _dat[k].value[:, :, :, x[0]:x[1]]
-                                elif len(x) == 1:
-                                    _dat[k].value = _dat[k].value[:, :, :, x[0]]
-                                else:
-                                    _dat[k].value = _dat[k].value[:, :, :, x]
 
-                            # cut latitude
-                            if y:
-                                if len(y) == 2:
-                                    _dat[k].value = _dat[k].value[:, :, y[0]:y[1]]
-                                elif len(y) == 1:
-                                    _dat[k].value = _dat[k].value[:, :, y[0]]
-                                else:
-                                    _dat[k].value = _dat[k].value[:, :, y]
+                # select cordinates attributes
+                else:
 
-                            # cut levels
-                            if z:
-                                if len(z) == 2:
-                                    _dat[k].value = _dat[k].value[:, z[0]:z[1]]
-                                else:
-                                    try:
-                                        _dat[k].value = _dat[k].value[:, z]
-                                    except:
-                                        _dat[k].value = _dat[k].value[:, -1]
-                                        # cut time
-                            if dates:
-                                _dat[k].value = _dat[k].value[t]
+                    if k in ['latitude']:  # latitude coordinate
 
-                        else:
-                            _dat.update({k: v})
+                        if y:
+                            if len(y) == 2:
+                                _dat[k] = _dat[k][y[0]:y[1]]
+                            else:
+                                _dat[k] = _dat[k][y]
+
+                    elif k in ['longitude']:  # longitude coordinate
+
+                        if x:
+                            if len(x) == 2:
+                                _dat[k] = _dat[k][x[0]:x[1]]
+                            else:
+                                _dat[k] = _dat[k][x]
+
+                    elif k in ['time']:  # time coordinate
+
+                        if dates:
+                            _dat[k] = _dat[k][t]
+
+                    else:
+                        _dat.update({k: v})
 
         return __data
 
@@ -620,6 +635,20 @@ class gdio(object):
         return dataout
 
 
+    def __get_dims(self, data, var=None):
+        '''
+        Get grid data dimension
+        :param data:    dictionary
+                        data
+        :param var:     string
+                        grid reference variable name
+        :return:        tuple
+                        grid dimension, lat/lon of grid reference
+        '''
 
+        for key, val in data.items():
+            if (var is None or key == var[0]) \
+                    and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:
+                return val.longitude, val.latitude
 
 

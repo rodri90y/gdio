@@ -25,9 +25,9 @@ class TestGribFiles(unittest.TestCase):
 
     def setUp(self):
 
-        self.expected_dim = (2, 7, 160, 80)
-        self.expected_variables = ['ref_time', 'time_units', 'time', 'latitude', 'longitude', 't', 'u', 'v', 'r']
-        self.expected_level_type = 'isobaricInhPa'
+        self.expected_dim = (1, 2, 7, 160, 80)
+        self.expected_variables = ['ref_time', 'time_units', 'time', 't', 'u', 'v', 'r']
+        self.expected_level_type = ['isobaricInhPa']
         self.expected_units = 'm s**-1'
         self.expected_times = [12, 24]
         self.expected_coordinate = ([26], [53])
@@ -44,17 +44,14 @@ class TestGribFiles(unittest.TestCase):
                          'incorrect number of variables')
 
     def test_grib_varible_dimension(self):
-
-        self.assertEqual(self.gbr.get('u').value.shape, self.expected_dim,
+        self.assertEqual(self.gbr.get('u').isobaricInhPa.value.shape, self.expected_dim,
                          'dimension shape of u variable incorrect')
     def test_grib_levels(self):
-
-        self.assertEqual(self.gbr.get('u').level, self.expected_levels,
+        self.assertEqual(self.gbr.get('u').isobaricInhPa.level, self.expected_levels,
                          'levels of u variable incorrect')
 
     def test_grib_level_type(self):
-
-        self.assertEqual(self.gbr.get('u').type_level, self.expected_level_type,
+        self.assertEqual(self.gbr.get('u').level_type, self.expected_level_type,
                          'level type of u variable incorrect')
 
     def test_grib_varible_units(self):
@@ -68,10 +65,9 @@ class TestGribFiles(unittest.TestCase):
                          'incorrect time cut')
 
     def test_grib_cut_space(self):
-
-        self.assertEqual(near_yx({'latitude': self.gbr.get('latitude'),
-                                  'longitude': self.gbr.get('longitude')},
-                                lats=-23.54, lons=-46.64), self.expected_coordinate,
+        self.assertEqual(near_yx({'latitude': self.gbr.get('u').latitude,
+                                  'longitude': self.gbr.get('u').longitude},
+                                 lats=-23.54, lons=-46.64), self.expected_coordinate,
                          'problem with the spatial dimension')
 
 
