@@ -3,7 +3,7 @@ __date__ = "2021.Jan"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.3"
+__version__ = "version 0.1.8.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -255,8 +255,6 @@ class netcdf(object):
         :return:            string
                             level type
         '''
-
-        levels = [0]
 
         for dim in data.dimensions:
             if dim not in self.__fields_latitude + \
