@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2020.Dez"
-__credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
+__date__ = "2021.Jan"
+__credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.2"
+__version__ = "version 0.1.8.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"

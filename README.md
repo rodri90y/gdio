@@ -15,6 +15,10 @@ conda config --env --add channels conda-forge
 conda install -c rodri90y gdio
 
 if you are using pip install, before install manually the requirements
+
+conda create -n envname --file requirements.txt
+pip install gdio
+
 ```
 
 #### Required dependencies
@@ -267,7 +271,7 @@ Rodrigo Yamamoto codes@rodrigoyamamoto.com
 https://github.com/rodri90y/gdio
 
 ## Contributing
-* 0.1.8.2
+* 0.1.8.5
     * alpha release
     
 

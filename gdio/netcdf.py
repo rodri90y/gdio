@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2020.Dez"
+__date__ = "2021.Jan"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.2"
+__version__ = "version 0.1.8.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -93,6 +93,8 @@ class netcdf(object):
             cut_domain_roll = 0
 
             # set coordinates .......................
+            self.levels['surface'] = [0]
+
             for key in _nc.variables.keys():
                 if key in self.__fields_time:
                     self.coordinates.append('time')
@@ -253,8 +255,6 @@ class netcdf(object):
         :return:            string
                             level type
         '''
-
-        levels = [0]
 
         for dim in data.dimensions:
             if dim not in self.__fields_latitude + \
