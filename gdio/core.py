@@ -3,7 +3,7 @@ __date__ = "2021.Jan"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.5"
+__version__ = "version 0.1.8.6"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -179,7 +179,6 @@ class gdio(object):
                 if not griddes:
                     lons_n, lats_n = self.__get_dims(_dat, vars)
                     griddes = lats_n.shape + lons_n.shape
-
 
                 for key, val in _dat.items():
 
