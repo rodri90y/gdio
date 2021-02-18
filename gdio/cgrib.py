@@ -205,10 +205,10 @@ class cgrib():
             lon1 = self['longitudeOfFirstGridPointInDegrees']
             lon2 = self['longitudeOfLastGridPointInDegrees']
 
-            delon = self['iDirectionIncrementInDegrees']
-            delat = self['jDirectionIncrementInDegrees']
+            delon = self.get('iDirectionIncrementInDegrees', self.get('jDirectionIncrementInDegrees'))
+            delat = self.get('jDirectionIncrementInDegrees', self.get('iDirectionIncrementInDegrees'))
 
-            delat = delat if lat1<lat2 else delat*-1
+            delat = delat if lat1 < lat2 else delat * -1
             lats = np.arange(lat1, lat2 + delat, delat)
             delon = delon if lon1 < lon2 else delon * -1
             lons = np.arange(lon1, lon2 + delon, delon)
