@@ -25,10 +25,10 @@ pip install gdio
 
 conda config --add channels conda-forge
 
-+ Python (3.7.* or later)
++ Python (3.7.9=> or later)
 + numpy (1.18.4 or later)
 + netCDF4 (1.5.1.2 or later)
-+ eccodes (2.12.3 or later)
++ eccodes (2.12.0 or later)
 + python-eccodes
 + pyproj
 
@@ -271,7 +271,7 @@ Rodrigo Yamamoto codes@rodrigoyamamoto.com
 https://github.com/rodri90y/gdio
 
 ## Contributing
-* 0.1.8.6
+* 0.1.8.7
     * alpha release
     
 

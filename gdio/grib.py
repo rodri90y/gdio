@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2020.Dez"
+__date__ = "2021.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Igor Santos"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.6"
+__version__ = "version 0.1.8.7"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -233,7 +233,6 @@ class grib(object):
                                     _tmp = np.flip(gr.values, axis=0)[None, None, None, y[0]:y[1], x[0]:x[1]]
                                 else:
                                     _tmp = gr.values[None, None, None, y[0]:y[1], x[0]:x[1]]
-
 
                                 if idVar in _data.keys() and typLev in _data[idVar].keys():
                                     # concatenate levels
