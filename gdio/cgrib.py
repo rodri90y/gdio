@@ -192,6 +192,24 @@ class cgrib():
 
         return projparams
 
+    def dlonlat(self):
+        '''
+        Calculate dlon and dlat
+        :return: dlon, dlat
+        '''
+        nx = self.get('Ni', 1)
+        ny = self.get('Nj', 1)
+
+        lat1 = self.get('latitudeOfFirstGridPointInDegrees', 0)
+        lat2 = self.get('latitudeOfLastGridPointInDegrees', 0)
+        lon1 = self.get('longitudeOfFirstGridPointInDegrees', 0)
+        lon2 = self.get('longitudeOfLastGridPointInDegrees', 0)
+
+        dx = (lon2 - lon1) / (nx - 1)
+        dy = (lat2 - lat1) / (ny - 1)
+
+        return np.abs(dx), np.abs(dy)
+
     def grid(self):
         '''
         Generate the lat/lon grid from the grib projection parameters
@@ -205,8 +223,9 @@ class cgrib():
             lon1 = self['longitudeOfFirstGridPointInDegrees']
             lon2 = self['longitudeOfLastGridPointInDegrees']
 
-            delon = self.get('iDirectionIncrementInDegrees', self.get('jDirectionIncrementInDegrees'))
-            delat = self.get('jDirectionIncrementInDegrees', self.get('iDirectionIncrementInDegrees'))
+            delon, delat = self.dlonlat()
+            delon = self.get('iDirectionIncrementInDegrees', delon)
+            delat = self.get('jDirectionIncrementInDegrees', delat)
 
             delat = delat if lat1 < lat2 else delat * -1
             lats = np.arange(lat1, lat2 + delat, delat)

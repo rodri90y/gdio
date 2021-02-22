@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2021.Jan"
+__date__ = "2021.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.6"
+__version__ = "version 0.1.8.7"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -27,17 +27,17 @@ class netcdf(object):
         self.coordinates = list()
         self.variables = list()
 
-        self.__fields_latitude = ['latitude', 'lat', 'xlat', 'LATITUDE']
-        self.__fields_longitude = ['longitude', 'lon', 'xlon', 'LONGITUDE']
+        self.__fields_latitude = ['latitude', 'lat', 'xlat', 'XLAT_M', 'LATITUDE']
+        self.__fields_longitude = ['longitude', 'lon', 'xlon', 'XLONG_M', 'LONGITUDE']
         self.__fields_time = ['time', 'TIME']
         self.__fields_members = ['member']
         self.__fields_level = {
-                                'isobaricInhPa': ['level','levels','lev','presmdl'],
-                                'hybrid': ['mdllevel','level_hybrid'],
-                                'etaLevel': ['eta'],
-                                'sigmaLevel': ['sigma'],
-                                'surface': []
-                              }
+            'isobaricInhPa': ['level', 'levels', 'lev', 'presmdl'],
+            'hybrid': ['mdllevel', 'level_hybrid'],
+            'etaLevel': ['eta'],
+            'sigmaLevel': ['sigma'],
+            'surface': []
+        }
         self.__fields_order = ['ensemble', 'time', 'latitude', 'longitude']
         self.__fields_order = self.__fields_order[:2] + sum(self.__fields_level.values(), []) + self.__fields_order[2:]
 
@@ -105,6 +105,8 @@ class netcdf(object):
                     self.coordinates.append('longitude')
                     # convert from -180,180 to 360 format
                     self.lon = (_nc.variables[key][:] + 360) % 360
+
+
 
                 elif key in self.__fields_latitude:
                     self.coordinates.append('latitude')
