@@ -3,7 +3,7 @@ __date__ = "2021.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Igor Santos"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.7"
+__version__ = "version 0.1.8.8"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -174,7 +174,7 @@ class grib(object):
                                 # setup time ref/unity ...............
                                 if not ('ref_time' in data.keys() or 'time_units' in data.keys()):
                                     data.update({'ref_time': ref_time})
-                                    unit_time_range = gr.get('unitOfTimeRange', 255)
+                                    unit_time_range = gr.get('unitOfTimeRange', gr.get('stepUnits', 255))
                                     data.update({'time_units': self.unitOfTimeRange[unit_time_range]})
                                     self.time_units = '{0} since {1}'.format(self.unitOfTimeRange[unit_time_range], ref_time)
 
