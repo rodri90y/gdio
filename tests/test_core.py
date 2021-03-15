@@ -34,7 +34,7 @@ class TestNcFiles(unittest.TestCase):
         self.expected_levels = [200, 300, 500, 700, 800, 950, 1000]
         self.expected_level_type = ['isobaricInhPa']
         self.expected_units = 'm s**-1'
-        self.expected_variables = ['ref_time', 'time_units', 'time', 'longitude', 'latitude', 't', 'u', 'v', 'r']
+        self.expected_variables = ['ref_time', 'time_units', 'time', 'longitude', 'latitude', 'r', 't', 'u', 'v']
         self.expected_corrcoef = 0.94
         self.expected_sel = (1, 1, 4, 6, 18)
 

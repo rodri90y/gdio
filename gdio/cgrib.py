@@ -67,6 +67,7 @@ class cgrib():
 
         # value set
         self.values = codes_get_values(gid)
+
         # change the flatten data array to actual data dimension
         if isinstance(self.values, np.ndarray):
             self.values = self.values.reshape(self.Nj, self.Ni)
@@ -320,6 +321,7 @@ class fopen():
 
     def __init__(self, filename):
         self.f = open(filename, 'rb')
+        self.count = 0
 
     def __iter__(self):
         return self
@@ -328,7 +330,6 @@ class fopen():
         return self
 
     def __next__(self):
-
         gid = eccodes.codes_grib_new_from_file(self.f)
 
         if gid is None:
@@ -336,11 +337,11 @@ class fopen():
 
         self.data = cgrib(gid)
         eccodes.codes_release(gid)
+
         return self.data
 
+    def __len__(self):
+        return codes_count_in_file(self.f)
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.f.close()
-
-
-
