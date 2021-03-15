@@ -1,6 +1,6 @@
 package:
   name: gdio
-  version: 0.1.8.8
+  version: 0.1.8.9
 
 source:
   path: ../gdio

@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2021.Fev"
+__date__ = "2021.Mar"
 __credits__ = ["Rodrigo Yamamoto", "Igor Santos"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.8"
+__version__ = "version 0.1.8.9"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -61,15 +61,14 @@ class grib(object):
         logging.basicConfig(datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
                             format='[%(levelname)s @ %(asctime)s] %(message)s')
 
-
-
     def gb_load(self, ifile,
                 vars=None,
                 level_type=None,
                 cut_time=None,
                 cut_domain=None,
                 filter_by={},
-                rename_vars={}):
+                rename_vars={},
+                sort_before=False):
         '''
         Load grib file
         Yamamoto, R @ Out.2019
@@ -91,6 +90,9 @@ class grib(object):
         :param rename_vars: dictonary
                             rename variables names (key) for a new name (value).
                             Eg. {'tmpmdl': 't', 'tmpprs': 't'}
+        :param sort_before: bool
+                            Sort fields before process validityDate, validityTime, paramId, typeOfLevel, perturbationNumber and level
+                            Warning high consumption of memory, just use when the grib data structure is not standard
         :return:            dictonary/attributes
                             multiple time data container
         '''
@@ -99,20 +101,28 @@ class grib(object):
 
         try:
 
-            _gb = cgrib.fopen(ifile)
+            msg = cgrib.fopen(ifile)
 
-            msg = [g for g in _gb]
-            msg.sort(key=lambda x: (x.validityDate, x.validityTime, x.paramId, x.typeOfLevel, x.level, x.perturbationNumber))
+            # sort fields before use, warning high consumption of memory
+            if sort_before:
+                msg = [g for g in msg \
+                       if (vars is None or g.shortName in vars or g.paramId in vars) \
+                       and all(
+                        [g[k] in (v if isinstance(v, list) else [v]) for k, v in filter_by.items() if k in g.keys()])
+                       ]
+                msg.sort(key=lambda x: (
+                x.validityDate, x.validityTime, x.paramId, x.typeOfLevel, x.level, x.perturbationNumber))
 
             forecastDate = None
             fcst_time = 0
             concat_time = False
             ref_time = None
+            msg_len = len(msg)
 
             for n, gr in enumerate(msg):
 
                 start = 0
-                stop = len(msg)
+                stop = msg_len
                 cut_domain_roll = 0
 
                 #filter by grib parameter
@@ -136,11 +146,11 @@ class grib(object):
                     if isinstance(cut_time, tuple):
                         start, stop = cut_time
                         start = 0 if start is None else start
-                        stop = len(msg) if stop is None else stop
+                        stop = msg_len if stop is None else stop
 
 
                     if self.verbose:
-                        logging.debug('''forecastDate: {0} / cut_time_range: {1}-{2}'''.format(forecastDate,start,stop))
+                        logging.debug(f'forecastDate: {forecastDate} / cut_time_range: {start}-{stop} / {gr.shortName}')
 
 
                     # cut time between start and stop time
@@ -151,13 +161,15 @@ class grib(object):
                         if (level_type is None or typLev in level_type):
 
                             if self.verbose:
-                                logging.debug('''{0}, {1}, {2}, {3}, {4}, {5} '''.format(gr.dataDate,
-                                                             gr.shortName,
-                                                             gr.paramId,
-                                                             gr.name,
-                                                             gr.typeOfLevel,
-                                                             gr.level,
-                                                             gr.values.shape)
+                                logging.debug('''{0}, {1}, {2}, {3}, {4}, {5} {6} {7}'''.format(gr.dataDate,
+                                                                                                gr.shortName,
+                                                                                                gr.paramId,
+                                                                                                gr.name,
+                                                                                                gr.typeOfLevel,
+                                                                                                gr.level,
+                                                                                                gr.values.shape,
+                                                                                                gr.get(
+                                                                                                    'perturbationNumber'))
                                               )
 
                             # handle the variable id
@@ -235,29 +247,31 @@ class grib(object):
                                     _tmp = gr.values[None, None, None, y[0]:y[1], x[0]:x[1]]
 
                                 if idVar in _data.keys() and typLev in _data[idVar].keys():
+
+                                    member_num = gr.get('perturbationNumber')
+
                                     # concatenate levels
-                                    if typLev in self.__fields_3dlevel:
-                                        _tmp = np.concatenate((_data[idVar][typLev].value, _tmp), axis=2)
+                                    _data[idVar][typLev].value = np.concatenate((_data[idVar][typLev].value, _tmp),
+                                                                                axis=2)
+
+                                    if gr.level not in _data[idVar][typLev].level:
                                         _data[idVar][typLev].level.append(gr.level)
 
-                                    # concatenate members
-                                    if gr.get('perturbationNumber',0)>member_num:
-                                        member_num = gr.get('perturbationNumber')
-                                        _data[idVar][typLev].value = np.concatenate((_data[idVar][typLev].value, _tmp),
-                                                                                    axis=0)
-                                    else:
-                                        _data[idVar][typLev].value = _tmp
+                                    if member_num not in _data[idVar][typLev].members:
+                                        _data[idVar][typLev].members.append(gr.perturbationNumber)
 
                                 else:
-                                    member_num = 0
+                                    member_num = gr.get('perturbationNumber', 0)
 
                                     __tmp = {
-                                                typLev: {'value': _tmp, 'level': [gr.level]},
-                                                'param_id': gr.paramId,
-                                                'long_name': gr.name,
-                                                'parameter_units': gr.parameterUnits,
-                                                'latitude': self.lat,
-                                                'longitude': self.lon
+                                        typLev: {'value': _tmp,
+                                                 'level': [gr.level],
+                                                 'members': [member_num]},
+                                        'param_id': gr.paramId,
+                                        'long_name': gr.name,
+                                        'parameter_units': gr.parameterUnits,
+                                        'latitude': self.lat,
+                                        'longitude': self.lon
                                     }
 
                                     if idVar in _data.keys():
@@ -268,19 +282,56 @@ class grib(object):
                                         _data[idVar].level_type = [typLev]
 
                 # consolidate data for last time block  ................
-                if n + 1 == len(msg):
+                if n + 1 == msg_len:
                     data = self.__concat_time(_data, data)
 
                 self.variables = list(data.keys())
                 self.coordinates.append('latitude')
                 self.coordinates.append('longitude')
                 self.coordinates.append('level')
+                self.coordinates.append('members')
+
+            # rearrange data (set member axis, sort levels and member data)
+            data = self.__arrange_data(data)
 
         except Exception as e:
             logging.error('''gdio.gb_load > {0}'''.format(e))
 
         return data
 
+    def __arrange_data(self, data):
+        '''
+        rearrange data (set member axis, sort levels and member data)
+        :param data:    dict
+                        data dictionary
+        :return:        dict
+                        data dictionary
+        '''
+
+        for k, v in data.items():
+            if isinstance(v, dict):
+                try:
+                    for l in v.keys():
+                        if not l in ['level_type', 'param_id', 'long_name',
+                                     'parameter_units', 'latitude', 'longitude']:
+                            dims = list(data[k][l].value.shape)
+                            levels = data[k][l].level
+                            members = data[k][l].members
+                            dims[0], dims[2] = len(members), len(levels)
+
+                            # set member to dimension 0
+                            data[k][l].value = data[k][l].value.reshape(dims)
+
+                            # sort levels
+                            data[k][l].value = data[k][l].value[:, :, np.argsort(levels)]
+                            data[k][l].level = sorted(levels)
+
+                            # sort levels
+                            data[k][l].value = data[k][l].value[np.argsort(members)]
+                            data[k][l].members = sorted(members)
+                except Exception as e:
+                    logging.error('''gdio.__arrange_data > {0} {1}'''.format(k, e))
+        return data
 
     def gb_write(self, ifile,
                  data,
@@ -384,8 +435,8 @@ class grib(object):
         for k,v in _data.items():
             if k in __data.keys():
                 for l in v.keys():
-                    if not l in ['level_type','param_id','long_name',
-                                 'parameter_units','latitude','longitude']:
+                    if not l in ['level_type', 'param_id', 'long_name',
+                                 'parameter_units', 'latitude', 'longitude', 'members']:
                         __data[k][l].value = np.concatenate((__data[k][l].value, _data[k][l].value), axis=1)
             else:
                 __data[k] = _data[k]

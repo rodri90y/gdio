@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2021.Fev"
+__date__ = "2021.Mar"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.7"
+__version__ = "version 0.1.8.9"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -55,9 +55,13 @@ class gdio(object):
         logging.basicConfig(datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
                             format='[%(levelname)s @ %(asctime)s] %(message)s')
 
-
-
-    def thread(self, ifile, vars=None, cut_time=None, cut_domain=None, level_type=None, filter_by={}):
+    def thread(self, ifile,
+               vars=None,
+               cut_time=None,
+               cut_domain=None,
+               level_type=None,
+               filter_by={},
+               sort_before=False):
         '''
         Load and cutting function
         :param ifile:               string
@@ -75,6 +79,10 @@ class gdio(object):
                                     dict with grib parameters at form of pair key:values (list or single values)
                                     eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]}
                                     or filter_by={'gridType': 'regular_ll'}
+        :param sort_before:         bool
+                                    Sort fields before process validityDate, validityTime, paramId, typeOfLevel,
+                                    perturbationNumber and level. Warning high consumption of memory, just use
+                                    when the grib data structure is not standard
         :return:                    dictionary
         '''
 
@@ -92,10 +100,11 @@ class gdio(object):
 
             if gb.is_grib(ifile):
                 return gb.gb_load(ifile, vars=vars,
-                                     cut_time=cut_time,
-                                     cut_domain=cut_domain,
-                                     level_type=level_type,
-                                     filter_by=filter_by)
+                                  cut_time=cut_time,
+                                  cut_domain=cut_domain,
+                                  level_type=level_type,
+                                  filter_by=filter_by,
+                                  sort_before=sort_before)
             else:
                 return nc.nc_load(ifile, vars=vars,
                                      cut_time=cut_time,
@@ -116,6 +125,7 @@ class gdio(object):
               level_type=None,
               filter_by={},
               uniformize_grid=True,
+              sort_before=False,
               inplace=False):
         '''
         Load multiple grib/netcdf files
@@ -141,6 +151,10 @@ class gdio(object):
         :param rename_vars:         dictonary
                                     rename variables names (key) for a new name (value).
                                     Eg. {'tmpmdl': 't', 'tmpprs': 't'}
+        :param sort_before:         bool
+                                    Sort fields before process validityDate, validityTime, paramId, typeOfLevel,
+                                    perturbationNumber and level. Warning high consumption of memory, just use
+                                    when the grib data structure is not standard
         :return:                    list of dictionaries
         '''
 
@@ -168,7 +182,8 @@ class gdio(object):
                         cut_time=cut_time,
                         cut_domain=cut_domain,
                         level_type=level_type,
-                        filter_by=filter_by),
+                        filter_by=filter_by,
+                        sort_before=sort_before),
                 files):
 
             if _dat:
@@ -297,6 +312,7 @@ class gdio(object):
         self.coordinates.append('latitude')
         self.coordinates.append('longitude')
         self.coordinates.append('level')
+        self.coordinates.append('members')
 
         if inplace:
             if data:

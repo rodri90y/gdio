@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2021.Fev"
+__date__ = "2021.Mar"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.8.8"
+__version__ = "version 0.1.8.9"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -219,7 +219,8 @@ class netcdf(object):
                             __tmp = {
                                 typLev: {
                                     'value': _data[:, start:stop, :, y[0]:y[1], x[0]:x[1]],
-                                    'level': self.levels[typLev]
+                                    'level': self.levels[typLev],
+                                    'members': list(range(0, _data.shape[0]))
                                 },
                                 'param_id': None,
                                 'long_name': self.get_attr(val, 'long_name'),

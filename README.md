@@ -69,6 +69,7 @@ Structure data:
             + isobaricInhPa/surface/maxWind/sigma (any level type key)
                 + value
                 + level
+                + members
 
 Example:
             
@@ -77,6 +78,7 @@ Example:
     ds.v.latitude
     ds.v.isobaricInhPa.value
     ds.v.isobaricInhPa.level
+    ds.v.isobaricInhPa.members
 
 
 #### Netcdf
@@ -222,11 +224,15 @@ A dictionary input will rename variables names (key) for a new name (value).
 Eg. {'tmpmdl': 't', 'tmpprs': 't'}
 
 ```
-ds = nc.nc_load('data/era5_20191227_lev.nc', rename_vars={'u':'10u'})
+ds = gr.gb_load('data/era5_20191227_lev.nc', rename_vars={'u':'10u'})
 >>> ds.keys()
 dict_keys(['ref_time', 'time_units', 'time', 't', '10u', 'v', 'r'])
 ```
-
+Sorting grib parameter before (warning high, consumption of memory). 
+Fix grib files unstructured or non-standard.
+```
+ds = gr.gb_load('data/era5_20191227_lev.nc', sort_before=True)
+```
 
 ### Reading multiple files
 This class has high level routines for multiple files and type reading, returning the netcdf/grib data as a list of dictionary type.
@@ -262,6 +268,211 @@ sub_set = ds.sel(dates=[datetime(2019,12,26,12,0)], latitude=[-23.54,-22], longi
 >>> print(sub_set[0].get('u').isobaricInhPa.value.shape)
 (1, 1, 4, 6, 18)
 ```
+
+## Routines
+#### gdio.mload
+```
+mload(files, vars=None, merge_files=True, cut_time=None,
+      cut_domain=None, level_type=None, filter_by={},
+      uniformize_grid=True, sort_before=False, inplace=False)
+```          
+Load multiple files (netcdf/grib) returning the data as a list of dictionary type interpolating the data to a same grid
+
+**files:               list**
+
+files names
+                                    
+**uniformize_grid:     boolean**\
+interpolate all ncs to first nc grid specification
+
+**vars:                list**\
+variables names
+
+**merge_files:         boolean**\
+merge files
+
+**cut_time:            tuple**\
+                        range of time to cut ex.: (0,10)/(0,None)/(None,10)
+
+**cut_domain:          tuple**\
+                        range of latitudes and longitudes to cut: (lat1, lon1, lat2, lon2)
+                        ex.: (-45,-90,20,-30)/(-45,None,20,-30)/(None,-90,None,-20)
+
+**level_type:          list**\
+                        type of level (hybrid, isobaricInhPa, surface)
+
+**filter_by:           dictonary**\
+ dict with grib parameters at form of pair key:values (list or single values)
+                        eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]}
+                        or filter_by={'gridType': 'regular_ll'}|
+
+**rename_vars:         dictonary
+                        rename variables names (key) for a new name (value).
+                        Eg. {'tmpmdl': 't', 'tmpprs': 't'}
+
+**sort_before:         bool**\
+                        Sort fields before process validityDate, validityTime, paramId, typeOfLevel,
+                        perturbationNumber and level. Warning high consumption of memory, just use
+                        when the grib data structure is not standard
+
+**return:**                    list of dictionaries
+
+
+#### gdio.sel
+```
+sel(data=None, latitude=None, longitude=None, 
+    dates=None, level=None, member=None, date_format="%Y-%m-%d %H:%M")
+```
+
+Select data by coordinates (date, latitude, longitude, levels and members)
+
+**data:       list of dictionaries**\
+                             raw dataset
+                             
+**latitude:     list of floats**\
+                             latitudes
+                             range of latitudes to select: [lat1, lat2]
+                             especific latitudes (1 or >2) [lat1, lat2, lat3, ...]
+
+**longitude:    list of floats**\
+                             range of longitudes to select: [lon1, lon2]
+                             especific longitudes (1 or >2) [lon1, lon2, lon3, ...]
+
+**dates:        list of datetime/string**\
+                             datetime/string date
+                             range of dates to select: [date1, date2]
+                             especific dates (1 or >2) [date1, date2, date3, ...]
+
+**level:        list of int**\
+                             range of levels to select: [level1, level2]
+                             especific levels (1 or >2) [level1, level2, level3, ...]
+
+**member:       list of int**\
+                             range of levels to select: [member, member]
+                             especific levels (1 or >2) [level1, level2, level3, ...]
+
+**return:**     list of dictionaries
+
+
+#### gdio.grib.gb_load
+```
+def gb_load(selfifile, vars=None, level_type=None,
+            cut_time=None, cut_domain=None, filter_by={},
+            rename_vars={}, sort_before=False)
+```
+Load grib file
+
+**ifile:       string**\
+                            grib 1 or 2 file name
+
+**vars:        list**\
+                            variables short name or id parameter number
+
+**cut_time:    tuple**\
+                            range of time to cut ex.: (0,10)/(0,None)/(None,10)
+
+**cut_domain:  tuple**\
+                            range of latitudes and longitudes to cut: (lat1, lon1, lat2, lon2)
+                            ex.: (-45,290,20,330)/(-45,None,20,330)/(None,290,None,320)
+
+**level_type:  list**\
+                            type of level (hybrid, isobaricInhPa, surface)
+
+**filter_by:   dictonary**\
+                            dict with grib parameters at form of pair key:values (list or single values)
+                            eg: filter_by={"perturbationNumber": [0,10],"level": [1000,500,250]}
+                            or filter_by={"gridType": "regular_ll"}
+
+**rename_vars: dictonary**\
+                            rename variables names (key) for a new name (value).
+                            Eg. {"tmpmdl": "t", "tmpprs": "t"}
+
+**sort_before: bool**\
+                            Sort fields before process validityDate, validityTime, paramId, typeOfLevel, perturbationNumber and level
+                            Warning high consumption of memory, just use when the grib data structure is not standard
+
+**return: dictonary/attributes**\
+multiple time data container
+
+#### gdio.netcdf.nc_load
+```
+nc_load(ifile, vars=None, cut_time=None, cut_domain=None, level_type=None, rename_vars={}):
+```
+
+Load netcdf files
+
+
+**ifile:       string**\
+                    netcdf file name
+                    
+**vars:        list**\
+                    variables short name
+                    
+**cut_time:    tuple**\
+                    range of time (absolute) to cut ex.: (0,10)/(0,None)/(None,10)
+                    
+**cut_domain:  tuple**\
+                    range of latitudes and longitudes to cut: (lat1, lon1, lat2, lon2)
+                    ex.: (-45,290,20,330)/(-45,None,20,330)/(None,290,None,320)
+                    
+**level_type:  list**\
+                    type of level (hybrid, isobaricInhPa, surface)
+
+**rename_vars: dictonary**\
+                            rename variables names (key) for a new name (value).
+                            Eg. {"tmpmdl": "t", "tmpprs": "t"}
+                            
+**return: dictonary/attributes**\
+multiple time data container
+
+#### gdio.netcdf.nc_write
+```
+nc_write(ifile, data, zlib=True, netcdf_format='NETCDF4')
+```
+
+Write netcdf file
+
+**ifile:           string**\
+                                file path
+                                
+**data:            dict**\
+                                dataset
+                                
+**zlib:            bool**\
+                                enable compression
+                                
+**netcdf_format:   string**\
+                                netcdf format: NETCDF4, NETCDF4_CLASSIC, NETCDF3_CLASSIC or NETCDF3_64BIT
+
+#### gdio.remapbil
+```
+remapbil(data, lon, lat, lon_new, lat_new, order=1, masked=False)
+```
+
+Interpolate data to new domain resolution
+
+**data: array**\
+                        3D data (time,lon,lat)
+
+**lon: array**
+
+**lat: array**
+
+**lon_new: array**\
+                        new grid logitudes
+
+**lat_new: array**\
+                        new grid latitudes
+
+**order:   int**\
+                        0- nearest-neighbor, 1 - bilinear, 2 - cubic spline
+
+**masked: boolean**\
+                        If True, points outside the range of xin and yin
+                        are masked (in a masked array). If masked is set to a number
+
+**return: 3D array**
+
 ## Release History
 
 
