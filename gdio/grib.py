@@ -320,7 +320,8 @@ class grib(object):
                             dims[0], dims[2] = len(members), len(levels)
 
                             # set member to dimension 0
-                            data[k][l].value = data[k][l].value.reshape(dims)
+                            data[k][l].value = np.swapaxes(data[k][l].value, 0, 2)
+                            #data[k][l].value = data[k][l].value.reshape(dims)
 
                             # sort levels
                             data[k][l].value = data[k][l].value[:, :, np.argsort(levels)]
