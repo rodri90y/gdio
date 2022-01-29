@@ -10,7 +10,7 @@ class cgrib():
         self.perturbationNumber = 0
 
         _gribkeys = [
-            'centre',
+            'centre', 'editionNumber',
             'dataDate', 'dataTime', 'unitOfTimeRange',
             'year', 'month', 'day', 'hour', 'minute',
             'validityDate', 'validityTime',
@@ -67,6 +67,7 @@ class cgrib():
 
         # value set
         self.values = codes_get_values(gid)
+        self.msg = codes_get_message(gid)
 
         # change the flatten data array to actual data dimension
         if isinstance(self.values, np.ndarray):
