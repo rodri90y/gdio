@@ -270,7 +270,7 @@ sub_set = ds.sel(dates=[datetime(2019,12,26,12,0)], latitude=[-23.54,-22], longi
 ```
 
 ## Routines
-#### gdio.mload
+### gdio.mload
 ```
 mload(files, vars=None, merge_files=True, cut_time=None,
       cut_domain=None, level_type=None, filter_by={},
@@ -302,23 +302,19 @@ merge files
                         type of level (hybrid, isobaricInhPa, surface)
 
 **filter_by:           dictonary**\
- dict with grib parameters at form of pair key:values (list or single values)
-                        eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]}
-                        or filter_by={'gridType': 'regular_ll'}|
+dict with grib parameters at form of pair key:values (list or single values)
+eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]} or filter_by={'gridType': 'regular_ll'}|
 
-**rename_vars:         dictonary
-                        rename variables names (key) for a new name (value).
-                        Eg. {'tmpmdl': 't', 'tmpprs': 't'}
+**rename_vars:         dictonary**\
+rename variables names (key) for a new name (value). Eg. {'tmpmdl': 't', 'tmpprs': 't'}
 
 **sort_before:         bool**\
-                        Sort fields before process validityDate, validityTime, paramId, typeOfLevel,
-                        perturbationNumber and level. Warning high consumption of memory, just use
-                        when the grib data structure is not standard
+Sort fields before process validityDate, validityTime, paramId, typeOfLevel, perturbationNumber and level. Warning high
+consumption of memory, just use when the grib data structure is not standard
 
 **return:**                    list of dictionaries
 
-
-#### gdio.sel
+### gdio.sel
 ```
 sel(data=None, latitude=None, longitude=None, 
     dates=None, level=None, member=None, date_format="%Y-%m-%d %H:%M")
@@ -353,8 +349,7 @@ Select data by coordinates (date, latitude, longitude, levels and members)
 
 **return:**     list of dictionaries
 
-
-#### gdio.grib.gb_load
+### gdio.grib.gb_load
 ```
 def gb_load(selfifile, vars=None, level_type=None,
             cut_time=None, cut_domain=None, filter_by={},
@@ -394,7 +389,7 @@ Load grib file
 **return: dictonary/attributes**\
 multiple time data container
 
-#### gdio.netcdf.nc_load
+### gdio.netcdf.nc_load
 ```
 nc_load(ifile, vars=None, cut_time=None, cut_domain=None, level_type=None, rename_vars={}):
 ```
@@ -425,7 +420,7 @@ Load netcdf files
 **return: dictonary/attributes**\
 multiple time data container
 
-#### gdio.netcdf.nc_write
+### gdio.netcdf.nc_write
 ```
 nc_write(ifile, data, zlib=True, netcdf_format='NETCDF4')
 ```
@@ -444,7 +439,7 @@ Write netcdf file
 **netcdf_format:   string**\
                                 netcdf format: NETCDF4, NETCDF4_CLASSIC, NETCDF3_CLASSIC or NETCDF3_64BIT
 
-#### gdio.remapbil
+### gdio.remapbil
 ```
 remapbil(data, lon, lat, lon_new, lat_new, order=1, masked=False)
 ```
@@ -482,7 +477,8 @@ Rodrigo Yamamoto codes@rodrigoyamamoto.com
 https://github.com/rodri90y/gdio
 
 ## Contributing
-* 0.1.8.7
+
+* 0.1.8.10
     * alpha release
     
 
