@@ -1,0 +1,5 @@
+eccodes
+numpy==1.20.1
+netCDF4
+scipy
+pyproj
