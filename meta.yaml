@@ -1,6 +1,6 @@
 package:
   name: gdio
-  version: 0.1.8.10
+  version: 0.1.9
 
 source:
   path: ../gdio
@@ -9,7 +9,7 @@ source:
 requirements:
   build:
     - python
-    - numpy >=1.20*
+    - numpy >=1.21*
     - netCDF4
     - python-eccodes
     - eccodes >=2.12.0
