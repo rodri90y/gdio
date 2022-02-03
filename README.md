@@ -29,7 +29,7 @@ conda config --add channels conda-forge
 + numpy (1.21.5 or later)
 + netCDF4 (1.5.8 or later)
 + eccodes (2.24.2 or later)
-+ python-eccodes (2.24.2 or later)
++ python-eccodes (1.4.0 or later)
 + pyproj
 
 
