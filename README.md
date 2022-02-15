@@ -468,6 +468,26 @@ Interpolate data to new domain resolution
 
 **return: 3D array**
 
+
+## Dev utils
+Docker compose to support development
+
+### Commands
+ - make build
+   - Build the container
+ - make up
+   - Start container
+ - make stop
+   - Stop container
+ - make test
+   - Run unit tests in container
+ - make bash
+   - Access container
+ - make ipython
+   - Run ipython in container
+ - make fix
+   - Run autopep to fix code format
+
 ## Release History
 
 
