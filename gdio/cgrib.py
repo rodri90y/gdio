@@ -40,8 +40,7 @@ class cgrib():
             'perturbationNumber', 'scaleFactorOfRadiusOfSphericalEarth'
         ]
 
-
-        _keys = gribkeys if gribkeys else _gribkeys+self.gridkeys
+        _keys = gribkeys if gribkeys else _gribkeys + self.gridkeys
 
         for k in _keys:
 
@@ -74,7 +73,6 @@ class cgrib():
             self.values = self.values.reshape(self.Nj, self.Ni)
 
         self.projparams = self._set_projparams()
-
 
     def __new__(cls, *args, **kwargs):
         instance = object.__new__(cls)
@@ -115,9 +113,9 @@ class cgrib():
                 projparams['a'] = 6371229.0
                 projparams['b'] = 6371229.0
             elif self['shapeOfTheEarth'] in [3, 7]:
-                    #simplify version, without considerate scaleFactorOfRadiusOfSphericalEarth key
-                    projparams['a'] = self['scaledValueOfEarthMajorAxis']
-                    projparams['b'] = self['scaledValueOfEarthMinorAxis']
+                # simplify version, without considerate scaleFactorOfRadiusOfSphericalEarth key
+                projparams['a'] = self['scaledValueOfEarthMajorAxis']
+                projparams['b'] = self['scaledValueOfEarthMinorAxis']
             elif self['shapeOfTheEarth'] == 4:
                 projparams['a'] = 6378137.0
                 projparams['b'] = 6356752.314
@@ -140,8 +138,7 @@ class cgrib():
             else:
                 raise ValueError('unknown shape of the earth flag')
 
-
-        #projections parameters
+        # projections parameters
         if self['gridType'] in ['reduced_gg', 'reduced_ll', 'regular_gg', 'regular_ll']:  # regular lat/lon grid
             projparams['proj'] = 'cyl'
         elif self['gridType'] == 'polar_stereographic':
@@ -160,7 +157,7 @@ class cgrib():
             projparams['lat_1'] = self['Latin1InDegrees']
             projparams['lat_2'] = self['Latin2InDegrees']
         elif self['gridType'] == 'mercator':
-            #simplyfy version fix scale without grib2divider,
+            # simplyfy version fix scale without grib2divider,
 
             lon1 = self['longitudeOfFirstGridPointInDegrees']
             lon2 = self['longitudeOfLastGridPointInDegrees']
@@ -174,7 +171,8 @@ class cgrib():
             else:
                 projparams['lat_ts'] = self['Latin'] / 1000.
 
-            if lon2 < lon1: lon2 += 360.  # domain crosses Greenwich
+            if lon2 < lon1:
+                lon2 += 360.  # domain crosses Greenwich
             projparams['lon_0'] = 0.5 * (lon1 + lon2)
             projparams['proj'] = 'merc'
 
@@ -278,8 +276,10 @@ class cgrib():
             # Set increment direction here for the grid.
             # NOTE: some GRIB files are arranged with first gridpoint
             # in top left, or top right corner for example...
-            if self['iScansPositively'] == 0 and dx > 0: dx = -dx
-            if self['jScansPositively'] == 0 and dy > 0: dy = -dy
+            if self['iScansPositively'] == 0 and dx > 0:
+                dx = -dx
+            if self['jScansPositively'] == 0 and dy > 0:
+                dy = -dy
             x = llcrnrx + dx * np.arange(nx)
             y = llcrnry + dy * np.arange(ny)
             x, y = np.meshgrid(x, y)
@@ -317,6 +317,7 @@ class cgrib():
             raise ValueError('unsupported grid {0}'.format(self['gridType']))
 
         return lats, lons
+
 
 class fopen():
 

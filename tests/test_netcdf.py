@@ -1,17 +1,16 @@
+from gdio.commons import near_yx
+from gdio.netcdf import netcdf
 import os
 import sys
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from gdio.netcdf import netcdf
-from gdio.commons import near_yx
 
 
 class TestNcFiles(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-
         nc = netcdf()
 
         path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
@@ -22,7 +21,6 @@ class TestNcFiles(unittest.TestCase):
                              cut_time=(12, 24))
 
     def setUp(self):
-
         self.expected_dim = (1, 1, 7, 80, 40)
         self.expected_times = [12]
         self.expected_level_type = ['isobaricInhPa']
@@ -30,12 +28,10 @@ class TestNcFiles(unittest.TestCase):
         self.expected_coordinate = ([13], [27])
         self.expected_levels = [200, 300, 500, 700, 800, 950, 1000]
 
-
     def test_open_netcdf(self):
         self.assertTrue(not self.nc is {})
 
     def test_netcdf_variables_test(self):
-
         self.assertEqual(list(self.nc.keys()),
                          ['ref_time', 'time_units', 'time', 'r', 't', 'u', 'v'],
                          'incorrect number of variables')
@@ -53,14 +49,12 @@ class TestNcFiles(unittest.TestCase):
                          'level type of u variable incorrect')
 
     def test_grib_varible_units(self):
-
         self.assertEqual(self.nc.get('u').parameter_units, self.expected_units,
                          'units of u variable incorrect')
 
     def test_grib_cut_time(self):
-
         self.assertListEqual(list(self.nc.get('time')), self.expected_times,
-                         'incorrect time cut')
+                             'incorrect time cut')
 
     def test_grib_cut_space(self):
         self.assertEqual(near_yx({'latitude': self.nc.get('u').latitude,

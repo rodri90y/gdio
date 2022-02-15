@@ -1,0 +1,7 @@
+numpy==1.21.5
+netCDF4
+scipy
+pyproj
+ipython
+autopep8==1.6.0
+pytest

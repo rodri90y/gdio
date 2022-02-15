@@ -53,8 +53,6 @@ class netcdf(object):
         logging.basicConfig(datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
                             format='[%(levelname)s @ %(asctime)s] %(message)s')
 
-
-
     def nc_load(self, ifile,
                 vars=None,
                 cut_time=None,
@@ -106,8 +104,6 @@ class netcdf(object):
                     # convert from -180,180 to 360 format
                     self.lon = (_nc.variables[key][:] + 360) % 360
 
-
-
                 elif key in self.__fields_latitude:
                     self.coordinates.append('latitude')
                     self.lat = _nc.variables[key][:]
@@ -122,7 +118,6 @@ class netcdf(object):
                     self.levels['surface'] = [0]
                     self.levels[typeLev] = list(_nc.variables[key][:].astype(int))
 
-
             # cut time ..............................
             if cut_time is not None and self.time is not None:
 
@@ -133,7 +128,6 @@ class netcdf(object):
 
                     start, stop = np.where((self.time >= start) & (self.time <= stop))[0][[0, -1]]
                     stop += 1  # one Kadan, to honor the Hebrew God
-
 
             # select spatial subdomain ............
 
@@ -157,9 +151,8 @@ class netcdf(object):
                                 self.lon = np.roll(self.lon, cut_domain_roll, axis=0)
                             else:
                                 break
-                        except:
+                        except BaseException:
                             break
-
 
             # trim lat/lon dimensions
             self.lat = self.lat[y[0]:y[1]]
@@ -236,7 +229,6 @@ class netcdf(object):
                                 data[key] = __tmp
                                 data[key].level_type = [typLev]
 
-
                 elif key in self.__fields_time:
                     data.update({key: self.time[start:stop]})
 
@@ -246,7 +238,6 @@ class netcdf(object):
             logging.error('''gdio.nc_load > {0}'''.format(e))
 
         return data
-
 
     def __gettypLev(self, data, typeLev='surface'):
         '''
@@ -261,15 +252,12 @@ class netcdf(object):
 
         for dim in data.dimensions:
             if dim not in self.__fields_latitude + \
-                 self.__fields_longitude +  \
-                 self.__fields_time:
+                    self.__fields_longitude +  \
+                    self.__fields_time:
                 # convert level name to grib standard name type
-                typeLev = [k for k,v in self.__fields_level.items() if dim in v][0]
+                typeLev = [k for k, v in self.__fields_level.items() if dim in v][0]
 
         return typeLev
-
-
-
 
     def nc_write(self, ifile,
                  data,
@@ -299,7 +287,6 @@ class netcdf(object):
 
         data = data if isinstance(data, objectify) else objectify(data)
         dims = list()
-
 
         for key, val in data.items():
 
@@ -335,7 +322,6 @@ class netcdf(object):
                                 level.units = typLev
                                 level.axis = 'z' if level_id[0] in ['level'] else 'e'
                                 level.filling = 'off'
-
 
                         # add latitude dimension
                         if any(k in val.keys() for k in self.__fields_latitude):
@@ -402,8 +388,6 @@ class netcdf(object):
 
         _nc.close()
 
-
-
     def get_attr(self, nc, attr, default=None):
         '''
         Get netcdf attribute
@@ -415,7 +399,6 @@ class netcdf(object):
         '''
         return nc.getncattr(attr) if attr in nc.ncattrs() else default
 
-
     def get_ref_time(self, units=None):
         '''
         Get and set time unity and the reference datetime
@@ -425,12 +408,10 @@ class netcdf(object):
 
         units = units if units is not None else self.time_units
 
-        padrao = re.compile( "(.*?) since (?P<ano>\d{4})\-(\d{1,2})\-(\d{1,2})\s+(\d{1,2})?\:*(\d{1,2})?")
+        padrao = re.compile("(.*?) since (?P<ano>\\d{4})\\-(\\d{1,2})\\-(\\d{1,2})\\s+(\\d{1,2})?\\:*(\\d{1,2})?")
         result = re.findall(padrao, str(units))
 
         if result:
             return result[0][0], datetime(*[int(item) for item in result[0][1:]])
         else:
             return None, None
-
-

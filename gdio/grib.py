@@ -27,26 +27,26 @@ class grib(object):
         self.variables = list()
 
         self.unitOfTimeRange = {
-                                    None: None,
-                                    0: 'minutes',
-                                    1: 'hours',
-                                    2: 'days',
-                                    3: 'months',
-                                    4: 'years',
-                                    5: 'decades',
-                                    6: 'normal',
-                                    7: 'century',
-                                    10: '3 hours',
-                                    11: '6 hours',
-                                    12: '12 hours',
-                                    13: 'seconds',
-                                    255: 'missing'
-                                }
+            None: None,
+            0: 'minutes',
+            1: 'hours',
+            2: 'days',
+            3: 'months',
+            4: 'years',
+            5: 'decades',
+            6: 'normal',
+            7: 'century',
+            10: '3 hours',
+            11: '6 hours',
+            12: '12 hours',
+            13: 'seconds',
+            255: 'missing'
+        }
         self.__fields_latitude = ['latitude', 'lat', 'xlat', 'LATITUDE']
         self.__fields_longitude = ['longitude', 'lon', 'xlon', 'LONGITUDE']
         self.__fields_time = ['time', 'TIME', 'ref_time', 'time_units']
         self.__fields_3dlevel = ['isobaricInhPa', 'hybrid', 'sigma', 'eta',
-                                 'heightAboveGround','depthBelowLandLayer','pressureFromGroundLayer']
+                                 'heightAboveGround', 'depthBelowLandLayer', 'pressureFromGroundLayer']
         self.fields_ensemble = 'perturbationNumber'
         self.fields_ensemble_exception = [0]
 
@@ -105,13 +105,13 @@ class grib(object):
 
             # sort fields before use, warning high consumption of memory
             if sort_before:
-                msg = [g for g in msg \
-                       if (vars is None or g.shortName in vars or g.paramId in vars) \
+                msg = [g for g in msg
+                       if (vars is None or g.shortName in vars or g.paramId in vars)
                        and all(
-                        [g[k] in (v if isinstance(v, list) else [v]) for k, v in filter_by.items() if k in g.keys()])
+                           [g[k] in (v if isinstance(v, list) else [v]) for k, v in filter_by.items() if k in g.keys()])
                        ]
                 msg.sort(key=lambda x: (
-                x.validityDate, x.validityTime, x.paramId, x.typeOfLevel, x.level, x.perturbationNumber))
+                    x.validityDate, x.validityTime, x.paramId, x.typeOfLevel, x.level, x.perturbationNumber))
 
             forecastDate = None
             fcst_time = 0
@@ -125,21 +125,21 @@ class grib(object):
                 stop = msg_len
                 cut_domain_roll = 0
 
-                #filter by grib parameter
-                if all([gr[k] in (v if isinstance(v, list) else [v]) for k,v in filter_by.items() if k in gr.keys()]):
+                # filter by grib parameter
+                if all([gr[k] in (v if isinstance(v, list) else [v]) for k, v in filter_by.items() if k in gr.keys()]):
 
                     # initialize time
                     if forecastDate is None:
                         self.history = "Created by gdio @ {date:%Y%m%d%H}".format(date=datetime.now())
                         ref_time = datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute)
-                        self.grid_description = {k: v for k,v in gr.items() if k in gr.gridkeys}
+                        self.grid_description = {k: v for k, v in gr.items() if k in gr.gridkeys}
                         self.centre = gr.centre
 
                     # set time coordinate ....................
                     if not forecastDate == self.fcstTime(gr):
                         concat_time = True
                         forecastDate = self.fcstTime(gr)
-                        fcst_time = int((forecastDate-ref_time).total_seconds()/(self.__unity(gr)*3600))
+                        fcst_time = int((forecastDate - ref_time).total_seconds() / (self.__unity(gr) * 3600))
                         member_num = 0
 
                     # set temporal subdomain .......
@@ -148,10 +148,8 @@ class grib(object):
                         start = 0 if start is None else start
                         stop = msg_len if stop is None else stop
 
-
                     if self.verbose:
                         logging.debug(f'forecastDate: {forecastDate} / cut_time_range: {start}-{stop} / {gr.shortName}')
-
 
                     # cut time between start and stop time
                     if (not cut_time or (fcst_time >= start and fcst_time <= stop)):
@@ -188,14 +186,14 @@ class grib(object):
                                     data.update({'ref_time': ref_time})
                                     unit_time_range = gr.get('unitOfTimeRange', gr.get('stepUnits', 255))
                                     data.update({'time_units': self.unitOfTimeRange[unit_time_range]})
-                                    self.time_units = '{0} since {1}'.format(self.unitOfTimeRange[unit_time_range], ref_time)
+                                    self.time_units = '{0} since {1}'.format(
+                                        self.unitOfTimeRange[unit_time_range], ref_time)
 
                                 # merge time ...............
                                 if concat_time:
                                     data = self.__concat_time(_data, data, fcst_time)
                                     concat_time = False
                                     _data = objectify()
-
 
                                 # set spatial coordinates ......
                                 self.lat, self.lon = gr.latlons()
@@ -205,9 +203,8 @@ class grib(object):
 
                                 flip_lat = self.lat[-1, 0] < self.lat[0, 0]
 
-                                if flip_lat:                    #error with lat/lon 2 dims arrays
+                                if flip_lat:  # error with lat/lon 2 dims arrays
                                     self.lat = np.flip(self.lat, axis=0)
-
 
                                 # select spatial subdomain .......
                                 y, x = [None, None], [None, None]
@@ -215,26 +212,24 @@ class grib(object):
                                 if cut_domain:
                                     if isinstance(cut_domain, tuple):
                                         lat1, lon1, lat2, lon2 = cut_domain
-                                        while True: # necessary 2 pass to fix 360 - 0 descontinuity
+                                        while True:  # necessary 2 pass to fix 360 - 0 descontinuity
                                             y, x = near_yx({'latitude': self.lat[:, 0], 'longitude': self.lon[0, :]},
-                                                                lats=[lat1, lat2], lons=[lon1, lon2])
+                                                           lats=[lat1, lat2], lons=[lon1, lon2])
 
-                                            #if x0>x1 the longitude is rolled of x0 elements
-                                            #in order to avoid discontinuity 360-0 of the longitude
+                                            # if x0>x1 the longitude is rolled of x0 elements
+                                            # in order to avoid discontinuity 360-0 of the longitude
                                             try:
-                                                if x[0]>x[1]:
+                                                if x[0] > x[1]:
                                                     cut_domain_roll = -x[0]
                                                     self.lon = np.roll(self.lon, cut_domain_roll, axis=1)
                                                 else:
                                                     break
-                                            except:
+                                            except BaseException:
                                                 break
-
 
                                 # trim lat/lon dimensions ......... Warning except lambert proj
                                 self.lat = self.lat[y[0]:y[1], 0]
                                 self.lon = self.lon[0, x[0]:x[1]]
-
 
                                 # if necessary roll longitude due discontinuity 360-0 of the longitude
                                 gr.values = np.roll(gr.values, cut_domain_roll, axis=-1)
@@ -350,7 +345,7 @@ class grib(object):
 
         # print(data)
         print(data.keys())
-        #ensemble loop
+        # ensemble loop
         # time loop
         for t, timestep in enumerate(data.time):
 
@@ -366,7 +361,6 @@ class grib(object):
 
         return
 
-
     def __get_vars(self, data):
         '''
         Extract variables from data keys
@@ -376,8 +370,7 @@ class grib(object):
                         list of data variables
         '''
         b = self.__fields_latitude + self.__fields_longitude + self.__fields_time
-        return list(set(data.keys())-set(b))
-
+        return list(set(data.keys()) - set(b))
 
     def fcstTime(self, gr):
         '''
@@ -387,10 +380,9 @@ class grib(object):
         '''
 
         if gr.step > 0:
-            return datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute) + timedelta(hours=gr.step*self.__unity(gr))
+            return datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute) + timedelta(hours=gr.step * self.__unity(gr))
         else:
             return datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute)
-
 
     def __unity(self, gr):
         '''
@@ -403,7 +395,7 @@ class grib(object):
         scale = 1.0
 
         if gr.stepUnits == 0:  # minute
-            scale = 1/60
+            scale = 1 / 60
         elif gr.stepUnits == 1:  # hour
             scale = 1
         elif gr.stepUnits == 2:  # day
@@ -416,7 +408,6 @@ class grib(object):
             scale = 10 * 24 * 365
 
         return scale
-
 
     def __concat_time(self, _data, __data, fcst_time=None):
         '''
@@ -432,7 +423,7 @@ class grib(object):
                             multiple time data container
         '''
 
-        for k,v in _data.items():
+        for k, v in _data.items():
             if k in __data.keys():
                 for l in v.keys():
                     if not l in ['level_type', 'param_id', 'long_name',
@@ -440,7 +431,6 @@ class grib(object):
                         __data[k][l].value = np.concatenate((__data[k][l].value, _data[k][l].value), axis=1)
             else:
                 __data[k] = _data[k]
-
 
         # add time information
         if not fcst_time is None:
@@ -452,7 +442,6 @@ class grib(object):
             self.time = __data['time']
 
         return __data
-
 
     @staticmethod
     def is_grib(ifile):
@@ -471,5 +460,3 @@ class grib(object):
                     return True
 
         return False
-
-
