@@ -107,14 +107,13 @@ class gdio(object):
                                   sort_before=sort_before)
             else:
                 return nc.nc_load(ifile, vars=vars,
-                                     cut_time=cut_time,
-                                     cut_domain=cut_domain,
-                                     level_type=level_type)
+                                  cut_time=cut_time,
+                                  cut_domain=cut_domain,
+                                  level_type=level_type)
 
         else:
-            logging.warning('''[PID:{0}] io.thread > missing file: {1}'''.format(os.getpid(),ifile))
+            logging.warning('''[PID:{0}] io.thread > missing file: {1}'''.format(os.getpid(), ifile))
             return None
-
 
     def mload(self,
               files,
@@ -176,7 +175,6 @@ class gdio(object):
         if isinstance(files, str):
             files = [files]
 
-
         for _dat in pool.map(
                 partial(self.thread, vars=vars,
                         cut_time=cut_time,
@@ -217,7 +215,7 @@ class gdio(object):
                                     logging.info('''gdio.mload > auto remapping grid @ {0}'''.format(key))
 
                                     # interpolate through z dimension .........
-                                    _tmp = np.ones(val[typLev].value.shape[:3]+griddes) * np.nan
+                                    _tmp = np.ones(val[typLev].value.shape[:3] + griddes) * np.nan
 
                                     # WARNING: If the z dimension of the source data is different
                                     # from that of the ref data, the interpolated level data may not
@@ -225,11 +223,12 @@ class gdio(object):
                                     for m in range(_tmp.shape[0]):
                                         for z in range(_tmp.shape[2]):
                                             try:
-                                                _tmp[m,:,z,:,:] = self.remapbil(val[typLev].value[m,:,z,:,:],
-                                                                                 val.longitude, val.latitude,
-                                                                                 lons_n, lats_n, order=1, masked=True)
+                                                _tmp[m, :, z, :, :] = self.remapbil(val[typLev].value[m, :, z, :, :],
+                                                                                    val.longitude, val.latitude,
+                                                                                    lons_n, lats_n, order=1, masked=True)
                                             except Exception as e:
-                                                logging.error('''gdio.mload > auto remapping grid error {0}'''.format(e))
+                                                logging.error(
+                                                    '''gdio.mload > auto remapping grid error {0}'''.format(e))
 
                                     val[typLev].value = _tmp
 
@@ -260,7 +259,6 @@ class gdio(object):
                                         data[key].update(val)
                                     else:
                                         data[key] = val
-
 
                     else:  # all parameters except variables
 
@@ -298,8 +296,8 @@ class gdio(object):
                             or key in ['ref_time', 'time_units']):
                         for typLev in val.level_type:
                             data[key][typLev].value = np.concatenate((data[key][typLev].value,
-                                                            np.ones((1,1)+data[key][typLev].value.shape[2:]) * np.nan),
-                                                            axis=1)
+                                                                      np.ones((1, 1) + data[key][typLev].value.shape[2:]) * np.nan),
+                                                                     axis=1)
                     elif key in self.__fields_time:
                         data[key] = np.concatenate((data[key], [data[key][-1] + timedelta(days=t_units)]))
                     elif key in ['ref_time']:
@@ -319,7 +317,6 @@ class gdio(object):
                 self.dataset.append(data)
         else:
             return data
-
 
     def sel(self,
             __data=None,
@@ -376,11 +373,9 @@ class gdio(object):
                 elif len(dates) > 0:
                     t = np.isin(_dat.get('time'), dates)
 
-
             # select spatial subdomain
             if longitude or latitude:
                 y, x = near_yx(_dat, lats=latitude, lons=longitude)
-
 
             for k, v in _dat.items():
 
@@ -416,10 +411,9 @@ class gdio(object):
                                 try:
                                     _dat[k][typLev].value = _dat[k][typLev].value[:, :, z]
                                     _dat[k][typLev].level = list(map(_dat[k][typLev].level.__getitem__, z))
-                                except:
+                                except BaseException:
                                     _dat[k][typLev].value = _dat[k][typLev].value[:, :, -1]
                                     _dat[k][typLev].level = _dat[k][typLev].level[-1]
-
 
                         # cut data in time dimension
                         if dates:
@@ -428,8 +422,6 @@ class gdio(object):
                         # cut data in member dimension
                         if member:
                             _dat[k][typLev].value = _dat[k][typLev].value[member]
-
-
 
                 # select cordinates attributes
                 else:
@@ -459,7 +451,6 @@ class gdio(object):
                         _dat.update({k: v})
 
         return __data
-
 
     def remapbil(self, data, lon, lat, lon_new, lat_new, order=1, masked=False):
         '''
@@ -491,12 +482,11 @@ class gdio(object):
 
         # here we parallelise in each step of time, a kind of magic
         return np.array(pool.map(
-                                partial(self.interp, xin=lon[np.argsort(lon)],
-                                        yin=lat[np.argsort(lat)], xout=_lon_new, yout=_lat_new,
-                                        order=order, masked=masked),
-                                data)
-                        )
-
+            partial(self.interp, xin=lon[np.argsort(lon)],
+                    yin=lat[np.argsort(lat)], xout=_lon_new, yout=_lat_new,
+                    order=order, masked=masked),
+            data)
+        )
 
     def interp(self, datain, xin, yin, xout, yout, checkbounds=False, masked=False, order=1):
         """
@@ -624,9 +614,9 @@ class gdio(object):
             delx = xcoords - xi.astype(np.float32)
             dely = ycoords - yi.astype(np.float32)
             dataout = (1. - delx) * (1. - dely) * datain[yi, xi] + \
-                      delx * dely * datain[yip1, xip1] + \
+                delx * dely * datain[yip1, xip1] + \
                       (1. - delx) * dely * datain[yip1, xi] + \
-                      delx * (1. - dely) * datain[yi, xip1]
+                delx * (1. - dely) * datain[yi, xip1]
         elif order == 0:
             xcoordsi = np.around(xcoords).astype(np.int32)
             ycoordsi = np.around(ycoords).astype(np.int32)
@@ -649,7 +639,6 @@ class gdio(object):
 
         return dataout
 
-
     def __get_dims(self, data, var=None):
         '''
         Get grid data dimension
@@ -665,5 +654,3 @@ class gdio(object):
             if (var is None or key == var[0]) \
                     and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:
                 return val.longitude, val.latitude
-
-

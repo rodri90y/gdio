@@ -11,11 +11,11 @@ class objectify(dict):
         allowing you to recurse into nested dicts (like: AttrDict.attr.attr)
         """
 
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for key, value in self.items():
-            if not isinstance(value, (dict, list, tuple, set)): continue
+            if not isinstance(value, (dict, list, tuple, set)):
+                continue
 
             super().__setitem__(key, self.__set(value))
 
@@ -107,14 +107,14 @@ def near_yx(data, lats=None, lons=None):
         if not lat is None:
             if np.min(_lat) <= lat and np.max(_lat) >= lat:
                 _y = np.nanargmin(np.abs(_lat - lat)) if lat is not None else lat
-        y.append(_y);
+        y.append(_y)
 
     for lon in list(lons):
         _x = None
         if not lon is None:
             if np.min(_lon) <= lon and np.max(_lon) >= lon:
                 _x = np.nanargmin(np.abs(_lon - lon)) if lon is not None else lon
-        x.append(_x);
+        x.append(_x)
 
     return y, x
 
@@ -129,7 +129,7 @@ def dict_get(data, key=None, by='values'):
                     lists or keys criteria
     :return:
     '''
-    if by=='values':
+    if by == 'values':
         for k, v in data.items():
             v = v if isinstance(v, list) else list(v)
             _k = difflib.get_close_matches(key, v, 1, 0.85)
@@ -137,4 +137,3 @@ def dict_get(data, key=None, by='values'):
                 return _k, k
     else:
         return data.get(key)
-
