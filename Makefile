@@ -20,7 +20,7 @@ ipython: # Run ipython in container
 	$(DOCKERCOMPOSE) exec $(SERVICE) ipython
 
 test: # Run unit tests
-	$(DOCKERCOMPOSE) exec $(SERVICE) python -m unittest discover tests/
+	$(DOCKERCOMPOSE) exec $(SERVICE) pytest tests
 
 fix: # Run autopep to fix code format
 	$(DOCKERCOMPOSE) exec $(SERVICE) autopep8 --in-place -a --max-line-length 120 -r .
