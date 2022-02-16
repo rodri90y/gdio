@@ -25,6 +25,9 @@ test: # Run unit tests
 fix: # Run autopep to fix code format
 	$(DOCKERCOMPOSE) exec $(SERVICE) autopep8 --in-place -a --max-line-length 120 -r .
 
+clean: # clean images
+	$(DOCKERCOMPOSE) stop && docker image rm $(docker images 'gdio_gdio' -a -q)
+
 # Out of the container
 
 tests-local:

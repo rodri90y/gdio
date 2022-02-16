@@ -1,5 +1,5 @@
 import difflib
-
+import  os
 import numpy as np
 
 
@@ -137,3 +137,49 @@ def dict_get(data, key=None, by='values'):
                 return _k, k
     else:
         return data.get(key)
+
+
+def __data_tree(data, depth=0):
+    '''
+    Get data structure tree
+    :param data:    dict
+    :param depth:   int
+    '''
+    depth += 1
+
+    for k, v in data.items():
+        if isinstance(v, dict):
+            yield from __data_tree(v, depth)
+        else:
+            yield (k, v), depth
+
+
+def get_data_structure(data):
+    '''
+    Format the data structure tree
+    :param data:    dict
+    return:         str
+                    data structure tree
+    '''
+
+    data_tree = ''
+
+    for _dat in data:
+
+        for v, depth in __data_tree(_dat):
+
+            if isinstance(v[1], np.ndarray):
+                data_tree += "{s:<{depth}}+-- {key}: {type} {shape}".format(s="",
+                                                                            depth=depth * 4,
+                                                                            key=v[0],
+                                                                            type=type(v[1]),
+                                                                            shape=v[1].shape)
+
+            else:
+                data_tree += "{s:<{depth}}+-- {key}: {value}".format(s="",
+                                                                     depth=depth * 4,
+                                                                     key=v[0],
+                                                                     value=str(v[1]))
+            data_tree += os.linesep
+
+    return data_tree

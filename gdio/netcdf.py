@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Jan"
+__date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.9.1"
+__version__ = "version 0.2.0"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -35,9 +35,41 @@ class netcdf(object):
             'isobaricInhPa': ['level', 'levels', 'lev', 'presmdl'],
             'hybrid': ['mdllevel', 'level_hybrid'],
             'etaLevel': ['eta'],
+            'eta': ['eta'],
             'sigmaLevel': ['sigma'],
-            'surface': []
+            'sigma': ['sigma'],
+            'theta': ['theta'],
+            'isentropic': ['theta'],
+
+            'surface': [],
+            'meanSea': [],
+            'depthBelowLandLayer': [],
+            'heightAboveGround': [],
+            'highCloudTop': [],
+            'middleCloudTop': [],
+            'nominalTop': [],
+            'lowCloudTop': [],
+            'middleCloudLayer': [],
+            'lowCloudLayer': [],
+            'atmosphereSingleLayer': [],
+            'entireAtmosphere': [],
+            'entireOcean': [],
+            'convectiveCloudLayer': [],
+            'boundaryLayerCloudLayer': [],
+            'highCloudBottom': [],
+            'lowCloudBottom': [],
+            'convectiveCloudBottom': [],
+            'convectiveCloudTop': [],
+            'middleCloudBottom': [],
+            'pressureFromGroundLayer': [],
+            'maxWind': [],
+            'tropopause': [],
+            'isothermZero': [],
+            'potentialVorticity': []
+
         }
+        self.__fields_3dlevel = ['isobaricInhPa', 'hybrid', 'sigma', 'eta',
+                                 'heightAboveGround', 'depthBelowLandLayer', 'pressureFromGroundLayer']
         self.__fields_order = ['ensemble', 'time', 'latitude', 'longitude']
         self.__fields_order = self.__fields_order[:2] + sum(self.__fields_level.values(), []) + self.__fields_order[2:]
 
@@ -309,7 +341,11 @@ class netcdf(object):
                 if isinstance(val, dict):
                     z_dims = list()
                     for typLev in val.level_type:
-                        level_id = self.__fields_level.get(typLev)[:1]
+
+                        if typLev in self.__fields_level:
+                            level_id = self.__fields_level.get(typLev)[:1]
+                        else:
+                            level_id = self.__fields_level.get('surface')[:1]
 
                         z_dims = level_id if not z_dims == level_id else z_dims
 

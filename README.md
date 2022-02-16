@@ -81,6 +81,41 @@ Example:
     ds.v.isobaricInhPa.members
 
 
+### Reading multiple files
+This class has high level routines for multiple files and type reading, returning the netcdf/grib data as a list of dictionary type.
+
+```
+from gdio.core import gdio
+
+ds = gdio(verbose=False)
+ds.mload(['tests/data/era5_20191226-27_lev.grib', 'tests/data/era5_20191227_lev.nc'],  
+        merge_files=True, uniformize_grid=True, cut_domain=(-30, 300, 10, 320), 
+        filter_by={'perturbationNumber': 0}, inplace=True)
+
+>>> ds.dataset[0].keys()
+dict_keys(['ref_time', 'time_units', 'time', 'longitude', 'latitude', 't', 'u', 'v', 'r'])
+>>> print(ds.dataset[0].u.isobaricInhPa.value.shape)
+(1, 6, 7, 160, 80)
+
+```
+
+Setting the ensemble grouping grib id key
+
+```
+ds.fields_ensemble = 'perturbationNumber'
+ds.fields_ensemble_exception = [0]
+```
+
+### Selecting a sub sample in mload dataset
+Select data by coordinates (date, latitude, longitude, levels and members)
+
+```
+sub_set = ds.sel(dates=[datetime(2019,12,26,12,0)], latitude=[-23.54,-22], longitude=[-46.64,-42.2], level=[2,6])
+
+>>> print(sub_set[0].get('u').isobaricInhPa.value.shape)
+(1, 1, 4, 6, 18)
+```
+
 #### Netcdf
 The class netcdf encapsulates all netcdf functions of reading and writing, as well as the cutting of time and spatial domains, returning the netcdf data as a dictionary type. The returned dictionary contains for each variable the value, param_id, type_level, level and parameter_units property.
 
@@ -234,40 +269,6 @@ Fix grib files unstructured or non-standard.
 ds = gr.gb_load('data/era5_20191227_lev.nc', sort_before=True)
 ```
 
-### Reading multiple files
-This class has high level routines for multiple files and type reading, returning the netcdf/grib data as a list of dictionary type.
-
-```
-from gdio.core import gdio
-
-ds = gdio(verbose=False)
-ds.mload(['tests/data/era5_20191226-27_lev.grib', 'tests/data/era5_20191227_lev.nc'],  
-        merge_files=True, uniformize_grid=True, cut_domain=(-30, 300, 10, 320), 
-        filter_by={'perturbationNumber': 0}, inplace=True)
-
->>> ds.dataset[0].keys()
-dict_keys(['ref_time', 'time_units', 'time', 'longitude', 'latitude', 't', 'u', 'v', 'r'])
->>> print(ds.dataset[0].u.isobaricInhPa.value.shape)
-(1, 6, 7, 160, 80)
-
-```
-
-Setting the ensemble grouping grib id key
-
-```
-ds.fields_ensemble = 'perturbationNumber'
-ds.fields_ensemble_exception = [0]
-```
-
-### Selecting a sub sample in mload dataset
-Select data by coordinates (date, latitude, longitude, levels and members)
-
-```
-sub_set = ds.sel(dates=[datetime(2019,12,26,12,0)], latitude=[-23.54,-22], longitude=[-46.64,-42.2], level=[2,6])
-
->>> print(sub_set[0].get('u').isobaricInhPa.value.shape)
-(1, 1, 4, 6, 18)
-```
 
 ## Routines
 ### gdio.mload
@@ -498,7 +499,7 @@ https://github.com/rodri90y/gdio
 
 ## Contributing
 
-* 0.1.8.10
+* 0.2.0
     * alpha release
     
 
