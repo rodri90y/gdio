@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Jan"
+__date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.9.1"
+__version__ = "version 0.2.0"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -19,7 +19,7 @@ from functools import partial
 import numpy as np
 import numpy.ma as ma
 
-from gdio.commons import near_yx, objectify
+from gdio.commons import near_yx, objectify, get_data_structure
 from gdio.grib import grib as gblib
 from gdio.netcdf import netcdf as nclib
 
@@ -54,6 +54,15 @@ class gdio(object):
 
         logging.basicConfig(datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
                             format='[%(levelname)s @ %(asctime)s] %(message)s')
+
+    @property
+    def describe(self):
+        '''
+        Print the data structure tree
+        '''
+        print(get_data_structure(self.dataset))
+        return
+
 
     def thread(self, ifile,
                vars=None,
@@ -163,6 +172,8 @@ class gdio(object):
         ref_time = None
         t_units = 1
 
+        self.variables = list()
+
         # convert timestep index to timeserie ......
         def dtp(t, unity=1):
             return timedelta(days=float(t * unity))
@@ -203,6 +214,9 @@ class gdio(object):
 
                     if (vars is None or key in vars) \
                             and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:
+
+                        if key not in self.variables:
+                            self.variables.append(key)
 
                         for typLev in val.level_type:
 
@@ -306,7 +320,6 @@ class gdio(object):
 
                 logging.warning('''io.load_nc > missing file applying null grid''')
 
-        self.variables = list(data.keys())
         self.coordinates.append('latitude')
         self.coordinates.append('longitude')
         self.coordinates.append('level')

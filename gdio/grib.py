@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Jan"
+__date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Igor Santos"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.1.9.1"
+__version__ = "version 0.2.0"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -45,8 +45,8 @@ class grib(object):
         self.__fields_latitude = ['latitude', 'lat', 'xlat', 'LATITUDE']
         self.__fields_longitude = ['longitude', 'lon', 'xlon', 'LONGITUDE']
         self.__fields_time = ['time', 'TIME', 'ref_time', 'time_units']
-        self.__fields_3dlevel = ['isobaricInhPa', 'hybrid', 'sigma', 'eta',
-                                 'heightAboveGround', 'depthBelowLandLayer', 'pressureFromGroundLayer']
+        self.__fields_3dlevel = ['isobaricInhPa', 'hybrid', 'sigma', 'eta', 'theta',
+                                 'sigmaLevel', 'isentropic']
         self.fields_ensemble = 'perturbationNumber'
         self.fields_ensemble_exception = [0]
 
