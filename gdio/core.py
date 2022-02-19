@@ -3,7 +3,7 @@ __date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.0"
+__version__ = "version 0.2.1"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -19,7 +19,7 @@ from functools import partial
 import numpy as np
 import numpy.ma as ma
 
-from gdio.commons import near_yx, objectify, get_data_structure
+from gdio.commons import near_yx, objectify, show_data_structure
 from gdio.grib import grib as gblib
 from gdio.netcdf import netcdf as nclib
 
@@ -60,8 +60,8 @@ class gdio(object):
         '''
         Print the data structure tree
         '''
-        print(get_data_structure(self.dataset))
-        return
+        show_data_structure(self.dataset)
+
 
 
     def thread(self, ifile,
@@ -70,6 +70,7 @@ class gdio(object):
                cut_domain=None,
                level_type=None,
                filter_by={},
+               rename_vars={},
                sort_before=False):
         '''
         Load and cutting function
@@ -88,6 +89,9 @@ class gdio(object):
                                     dict with grib parameters at form of pair key:values (list or single values)
                                     eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]}
                                     or filter_by={'gridType': 'regular_ll'}
+        :param rename_vars: dictonary
+                            rename variables names (key) for a new name (value).
+                            Eg. {'tmpmdl': 't', 'tmpprs': 't'}
         :param sort_before:         bool
                                     Sort fields before process validityDate, validityTime, paramId, typeOfLevel,
                                     perturbationNumber and level. Warning high consumption of memory, just use
@@ -113,11 +117,13 @@ class gdio(object):
                                   cut_domain=cut_domain,
                                   level_type=level_type,
                                   filter_by=filter_by,
+                                  rename_vars=rename_vars,
                                   sort_before=sort_before)
             else:
                 return nc.nc_load(ifile, vars=vars,
                                   cut_time=cut_time,
                                   cut_domain=cut_domain,
+                                  rename_vars=rename_vars,
                                   level_type=level_type)
 
         else:
@@ -134,6 +140,7 @@ class gdio(object):
               filter_by={},
               uniformize_grid=True,
               sort_before=False,
+              rename_vars={},
               inplace=False):
         '''
         Load multiple grib/netcdf files
@@ -174,6 +181,7 @@ class gdio(object):
 
         self.variables = list()
 
+
         # convert timestep index to timeserie ......
         def dtp(t, unity=1):
             return timedelta(days=float(t * unity))
@@ -192,19 +200,23 @@ class gdio(object):
                         cut_domain=cut_domain,
                         level_type=level_type,
                         filter_by=filter_by,
+                        rename_vars=rename_vars,
                         sort_before=sort_before),
                 files):
+
+            if vars is not None:
+                vars = [rename_vars.get(n, n) for n in vars]
 
             if _dat:
 
                 ref_time = _dat.get('ref_time')
 
-                # setting the standard projection/dimensions
-                if not griddes:
-                    lons_n, lats_n = self.__get_dims(_dat, vars)
-                    griddes = lats_n.shape + lons_n.shape
-
                 for key, val in _dat.items():
+
+                    # setting the standard projection/dimensions
+                    if not griddes:
+                        lons_n, lats_n = self.__get_dims(_dat, vars)
+                        griddes = lats_n.shape + lons_n.shape
 
                     # convert to day unity
                     if _dat.get('time_units').lower() in ['hour', 'hours', 'hrs']:

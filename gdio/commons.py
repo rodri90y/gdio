@@ -146,40 +146,37 @@ def __data_tree(data, depth=0):
     :param depth:   int
     '''
     depth += 1
-
     for k, v in data.items():
+
         if isinstance(v, dict):
-            yield from __data_tree(v, depth)
+            print("{s:<{depth}}+-- {key} ".format(s="", depth=depth * 4, key=k)
+                  )
+
+            __data_tree(v, depth)
         else:
-            yield (k, v), depth
+            if isinstance(v, np.ndarray):
 
-
-def get_data_structure(data):
-    '''
-    Format the data structure tree
-    :param data:    dict
-    return:         str
-                    data structure tree
-    '''
-
-    data_tree = ''
-
-    for _dat in data:
-
-        for v, depth in __data_tree(_dat):
-
-            if isinstance(v[1], np.ndarray):
-                data_tree += "{s:<{depth}}+-- {key}: {type} {shape}".format(s="",
-                                                                            depth=depth * 4,
-                                                                            key=v[0],
-                                                                            type=type(v[1]),
-                                                                            shape=v[1].shape)
+                print("{s:<{depth}}+-- {key}: {type} {shape}".format(s="",
+                                                                    depth=depth * 4,
+                                                                    key=k,
+                                                                    type=type(v),
+                                                                    shape=v.shape)
+                      )
 
             else:
-                data_tree += "{s:<{depth}}+-- {key}: {value}".format(s="",
-                                                                     depth=depth * 4,
-                                                                     key=v[0],
-                                                                     value=str(v[1]))
-            data_tree += os.linesep
+                print("{s:<{depth}}+-- {key}: {value}".format(s="",
+                                                             depth=depth * 4,
+                                                             key=k,
+                                                             value=str(v))
+                     )
 
-    return data_tree
+
+def show_data_structure(data):
+    '''
+    Describe the data structure
+    :param data:    dict
+    return:
+    '''
+
+    for _dat in data:
+        __data_tree(_dat, depth=0)
