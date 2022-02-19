@@ -89,22 +89,89 @@ from gdio.core import gdio
 
 ds = gdio(verbose=False)
 ds.mload(['tests/data/era5_20191226-27_lev.grib', 'tests/data/era5_20191227_lev.nc'],  
-        merge_files=True, uniformize_grid=True, cut_domain=(-30, 300, 10, 320), 
-        filter_by={'perturbationNumber': 0}, inplace=True)
+        merge_files=True, uniformize_grid=True, inplace=True)
 
 >>> ds.dataset[0].keys()
 dict_keys(['ref_time', 'time_units', 'time', 'longitude', 'latitude', 't', 'u', 'v', 'r'])
+
 >>> print(ds.dataset[0].u.isobaricInhPa.value.shape)
-(1, 6, 7, 160, 80)
+(1, 6, 7, 241, 281)
+
+>>> ds.dataset[0].time
+masked_array(data=[datetime.datetime(2019, 12, 26, 0, 0),
+                   datetime.datetime(2019, 12, 26, 12, 0),
+                   datetime.datetime(2019, 12, 27, 0, 0),
+                   datetime.datetime(2019, 12, 27, 12, 0),
+                   datetime.datetime(2019, 12, 27, 0, 0),
+                   datetime.datetime(2019, 12, 27, 12, 0)],
+             mask=False,
+       fill_value='?',
+            dtype=object)
+
+```
+Loading the data into the spatial subdomain between lat -30, lon 300 and lat 10, lon 320, selecting the time between 
+timespteps 12 and 24, and changing the variable names t and u to 2t and 10u.
+
+```
+from gdio.core import gdio
+
+ds = gdio(verbose=False)
+ds.mload(['tests/data/era5_20191226-27_lev.grib', 'tests/data/era5_20191227_lev.nc'],  
+        merge_files=True, uniformize_grid=True, 
+        cut_domain=(-30, 300, 10, 320), cut_time=(12, 24), 
+        rename_vars={'t': '2t', 'u': '10u'}, inplace=True)
+
+>>> ds.dataset[0].keys()
+dict_keys(['ref_time', 'time_units', 'time', 'longitude', 'latitude', 'r', '2t', '10u', 'v'])
+
+>>> print(ds.dataset[0]['10u'].isobaricInhPa.value.shape)
+(1, 2, 7, 160, 80)
+
+>>> ds.dataset[0].time
+masked_array(data=[datetime.datetime(2019, 12, 26, 12, 0),
+                   datetime.datetime(2019, 12, 27, 0, 0),
+                   datetime.datetime(2019, 12, 27, 12, 0)],
+             mask=False,
+       fill_value='?',
+            dtype=object)
 
 ```
 
-Setting the ensemble grouping grib id key
+The following parameters can be set to operate on the data during reading.
 
-```
-ds.fields_ensemble = 'perturbationNumber'
-ds.fields_ensemble_exception = [0]
-```
+**uniformize_grid:     boolean**\
+interpolate all gridded data to first grid data file resolution
+
+**vars:                list**\
+variables names
+
+**merge_files:         boolean**\
+merge the variables data of all files into a single data array per variable
+
+**cut_time:            tuple**\
+range of time to cut ex.: (0,10)/(0,None)/(None,10)
+
+**cut_domain:          tuple**\
+range of latitudes and longitudes to cut: (lat1, lon1, lat2, lon2)
+ex.: (-45,-90,20,-30)/(-45,None,20,-30)/(None,-90,None,-20)
+
+**level_type:          list**\
+type of level (hybrid, isobaricInhPa, surface)
+
+**filter_by:           dictonary**\
+dict with grib parameters at form of pair key:values (list or single values)
+eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]} or filter_by={'gridType': 'regular_ll'}|
+Obs: this parameter only works on grib files
+
+**rename_vars:         dictonary**\
+rename the original variable name (key) to a new name (value). 
+
+Eg. {'tmpmdl': 't', 'tmpprs': 't'}
+
+**sort_before:         bool**\
+Sort fields before process validityDate, validityTime, paramId, typeOfLevel, perturbationNumber and level. Warning high
+consumption of memory, just use when the grib data structure is not standard
+
 
 ### Selecting a sub sample in mload dataset
 Select data by coordinates (date, latitude, longitude, levels and members)
@@ -115,6 +182,53 @@ sub_set = ds.sel(dates=[datetime(2019,12,26,12,0)], latitude=[-23.54,-22], longi
 >>> print(sub_set[0].get('u').isobaricInhPa.value.shape)
 (1, 1, 4, 6, 18)
 ```
+
+### Showing the data structure
+Prints the data structure tree.
+```
+>>> ds.describe
+
+    +-- ref_time: 2019-12-26 00:00:00
+    +-- time_units: hours
+    +-- time: <class 'numpy.ma.core.MaskedArray'> (6,)
+    +-- longitude: <class 'numpy.ndarray'> (80,)
+    +-- latitude: <class 'numpy.ndarray'> (160,)
+    +-- r 
+        +-- isobaricInhPa 
+            +-- value: <class 'numpy.ndarray'> (1, 6, 7, 160, 80)
+            +-- level: [200, 300, 500, 700, 800, 950, 1000]
+            +-- members: [0]
+        +-- param_id: 157
+        +-- long_name: Relative humidity
+        +-- parameter_units: %
+        +-- latitude: <class 'numpy.ndarray'> (160,)
+        +-- longitude: <class 'numpy.ndarray'> (80,)
+        +-- level_type: ['isobaricInhPa']
+        
+    .
+    .
+    .
+    
+    +-- v 
+    +-- isobaricInhPa 
+        +-- value: <class 'numpy.ndarray'> (1, 6, 7, 160, 80)
+        +-- level: [200, 300, 500, 700, 800, 950, 1000]
+        +-- members: [0]
+    +-- param_id: 132
+    +-- long_name: V component of wind
+    +-- parameter_units: m s**-1
+    +-- latitude: <class 'numpy.ndarray'> (160,)
+    +-- longitude: <class 'numpy.ndarray'> (80,)
+    +-- level_type: ['isobaricInhPa']
+```
+
+Setting the ensemble grouping grib id key
+
+```
+ds.fields_ensemble = 'perturbationNumber'
+ds.fields_ensemble_exception = [0]
+```
+
 
 #### Netcdf
 The class netcdf encapsulates all netcdf functions of reading and writing, as well as the cutting of time and spatial domains, returning the netcdf data as a dictionary type. The returned dictionary contains for each variable the value, param_id, type_level, level and parameter_units property.
@@ -499,7 +613,7 @@ https://github.com/rodri90y/gdio
 
 ## Contributing
 
-* 0.2.0
+* 0.2.1
     * alpha release
     
 
