@@ -3,7 +3,7 @@ __date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.1"
+__version__ = "version 0.2.2"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -205,11 +205,6 @@ class netcdf(object):
 
                     if vars is None or key in vars:
 
-                        # rename variables
-                        for k, v in rename_vars.items():
-                            if key in k:
-                                key = v
-
                         if np.ma.isMaskedArray(_nc.variables[key][:]):
                             if not 'float' in val[:].data.dtype.name:
                                 _data = val[:].data
@@ -217,6 +212,11 @@ class netcdf(object):
                                 _data = val[:].filled(np.nan)
                         else:
                             _data = val[:]
+
+                        # rename variables
+                        for k, v in rename_vars.items():
+                            if key in k:
+                                key = v
 
                         # if necessary roll longitude due discontinuity 360-0 of the longitude
                         _data = np.roll(_data, cut_domain_roll, axis=-1)

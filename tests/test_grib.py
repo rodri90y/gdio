@@ -19,12 +19,13 @@ class TestGribFiles(unittest.TestCase):
 
         self.gbr = gr.gb_load(path,
                               cut_domain=(-30, 300, 10, 320),
-                              cut_time=(12, 24))
+                              cut_time=(12, 24),
+                              rename_vars={'t': 't2m'})
 
     def setUp(self):
 
         self.expected_dim = (1, 2, 7, 160, 80)
-        self.expected_variables = ['ref_time', 'time_units', 'time', 'r', 't', 'u', 'v']
+        self.expected_variables = ['ref_time', 'time_units', 'time', 'r', 't2m', 'u', 'v']
         self.expected_level_type = ['isobaricInhPa']
         self.expected_units = 'm s**-1'
         self.expected_times = [12, 24]
@@ -35,34 +36,37 @@ class TestGribFiles(unittest.TestCase):
 
         self.assertTrue(not self.gbr is {})
 
-    def test_grib_variables_test(self):
-
+    def test_variables_test(self):
         self.assertEqual(list(self.gbr.keys()), self.expected_variables,
                          'incorrect number of variables')
 
-    def test_grib_varible_dimension(self):
+    def test_variables_rename(self):
+        self.assertFalse(list(self.gbr.keys()) in self.expected_variables,
+                         'variable rename fail')
+
+    def test_varible_dimension(self):
         self.assertEqual(self.gbr.get('u').isobaricInhPa.value.shape, self.expected_dim,
                          'dimension shape of u variable incorrect')
 
-    def test_grib_levels(self):
+    def test_levels(self):
         self.assertEqual(self.gbr.get('u').isobaricInhPa.level, self.expected_levels,
                          'levels of u variable incorrect')
 
-    def test_grib_level_type(self):
+    def test_level_type(self):
         self.assertEqual(self.gbr.get('u').level_type, self.expected_level_type,
                          'level type of u variable incorrect')
 
-    def test_grib_varible_units(self):
+    def test_varible_units(self):
 
         self.assertEqual(self.gbr.get('u').parameter_units, self.expected_units,
                          'units of u variable incorrect')
 
-    def test_grib_cut_time(self):
+    def test_cut_time(self):
 
         self.assertListEqual(list(self.gbr.get('time')), self.expected_times,
                              'incorrect time cut')
 
-    def test_grib_cut_space(self):
+    def test_cut_space(self):
         self.assertEqual(near_yx({'latitude': self.gbr.get('u').latitude,
                                   'longitude': self.gbr.get('u').longitude},
                                  lats=-23.54, lons=-46.64), self.expected_coordinate,

@@ -16,7 +16,7 @@ conda install -c rodri90y gdio
 
 if you are using pip install, before install manually the requirements
 
-conda create -n envname --file requirements.txt
+conda create -n envname --file requirements/base.txt
 pip install gdio
 
 ```
