@@ -1,6 +1,6 @@
 from gdio.commons import near_yx
 from gdio.netcdf import netcdf
-import os
+import os, io
 import sys
 import unittest
 
@@ -15,7 +15,6 @@ class TestNcFiles(unittest.TestCase):
 
         path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
                             'data/era5_20191227_lev.nc')
-
         self.nc = nc.nc_load(path,
                              cut_domain=(-30, -60, 10, -40),
                              cut_time=(12, 24),
@@ -29,6 +28,7 @@ class TestNcFiles(unittest.TestCase):
         self.expected_coordinate = ([13], [27])
         self.expected_variables = ['ref_time', 'time_units', 'time', 'r', 't2m', 'u', 'v']
         self.expected_levels = [200, 300, 500, 700, 800, 950, 1000]
+
 
     def test_open_netcdf(self):
         self.assertTrue(not self.nc is {})
@@ -67,6 +67,28 @@ class TestNcFiles(unittest.TestCase):
                                  lats=-23.54, lons=-46.64), self.expected_coordinate,
                          'problem with the spatial dimension')
 
+    # def test_ncwrite(self):
+        # self.assertEqual(self.nc.get('u').parameter_units, self.expected_units,
+        #                  'units of u variable incorrect')
+        # nc = netcdf()
+        # path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
+        #              'data/output.nc')
+        # nc.nc_write(path, self.nc)
+
+        # nc = netcdf()
+        # nc.nc_load(path)
+        # self.assertListEqual(
+        #     nc,
+        #     self.nc.)
+
+
+
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()
+
+
+
+

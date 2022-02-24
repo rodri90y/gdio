@@ -3,7 +3,7 @@ __date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Igor Santos"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.2"
+__version__ = "version 0.2.3"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -71,7 +71,7 @@ class grib(object):
                 sort_before=False):
         '''
         Load grib file
-        Yamamoto, R @ Out.2019
+        Yamamoto, R @ Fev.2021
         :param ifile:       string
                             grib 1 or 2 file name
         :param vars:        list

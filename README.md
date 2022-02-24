@@ -289,7 +289,7 @@ nc = netcdf(verbose=False)
 ds = {'ref_time': datetime(2019, 12, 27, 0, 0), 
       'time_units': 'hours', 
       'time': np.array([12]),
-      'u': {'isobaricInhPa': {  'value': np.random.random((1, 7, 80, 40)),
+      'u': {'isobaricInhPa': {  'value': np.random.random((1, 1, 7, 80, 40)),
                                 'level': [200, 300, 500, 700, 800, 950, 1000]
                               },
             'param_id': None, 
@@ -386,13 +386,13 @@ ds = gr.gb_load('data/era5_20191227_lev.nc', sort_before=True)
 
 ## Routines
 ### gdio.mload
+Load multiple files (netcdf/grib) returning the data as a list of dictionary type interpolating the data to a same grid
+
 ```
 mload(files, vars=None, merge_files=True, cut_time=None,
       cut_domain=None, level_type=None, filter_by={},
       uniformize_grid=True, sort_before=False, inplace=False)
 ```          
-Load multiple files (netcdf/grib) returning the data as a list of dictionary type interpolating the data to a same grid
-
 **files:               list**
 
 files names
@@ -430,12 +430,13 @@ consumption of memory, just use when the grib data structure is not standard
 **return:**                    list of dictionaries
 
 ### gdio.sel
+Select data by coordinates (date, latitude, longitude, levels and members)
+
 ```
 sel(data=None, latitude=None, longitude=None, 
     dates=None, level=None, member=None, date_format="%Y-%m-%d %H:%M")
 ```
 
-Select data by coordinates (date, latitude, longitude, levels and members)
 
 **data:       list of dictionaries**\
                              raw dataset
@@ -465,12 +466,12 @@ Select data by coordinates (date, latitude, longitude, levels and members)
 **return:**     list of dictionaries
 
 ### gdio.grib.gb_load
+Load grib file
 ```
 def gb_load(selfifile, vars=None, level_type=None,
             cut_time=None, cut_domain=None, filter_by={},
             rename_vars={}, sort_before=False)
 ```
-Load grib file
 
 **ifile:       string**\
                             grib 1 or 2 file name
@@ -505,11 +506,11 @@ Load grib file
 multiple time data container
 
 ### gdio.netcdf.nc_load
+Load netcdf files
 ```
 nc_load(ifile, vars=None, cut_time=None, cut_domain=None, level_type=None, rename_vars={}):
 ```
 
-Load netcdf files
 
 
 **ifile:       string**\
@@ -536,11 +537,12 @@ Load netcdf files
 multiple time data container
 
 ### gdio.netcdf.nc_write
+Write netcdf file
 ```
 nc_write(ifile, data, zlib=True, netcdf_format='NETCDF4')
 ```
 
-Write netcdf file
+
 
 **ifile:           string**\
                                 file path
@@ -554,6 +556,14 @@ Write netcdf file
 **netcdf_format:   string**\
                                 netcdf format: NETCDF4, NETCDF4_CLASSIC, NETCDF3_CLASSIC or NETCDF3_64BIT
 
+
+**complevel:      int**\
+ compression level (default 4)
+
+**least_significant_digit: int**\
+specify the power of ten of the smallest decimal place in the data that is a
+                reliable value that dramatically improve zlib compression by quantizing
+                (or truncating) the data (default None)
 ### gdio.remapbil
 ```
 remapbil(data, lon, lat, lon_new, lat_new, order=1, masked=False)
