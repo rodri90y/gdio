@@ -3,7 +3,7 @@ __date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.3"
+__version__ = "version 0.2.4"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -367,7 +367,7 @@ class netcdf(object):
                         if 'level_type' in val.keys():
                             if level_id and level_id[0] not in _nc.dimensions:
                                 _nc.createDimension(level_id[0], len(val[typLev].level))
-                                level = _nc.createVariable(level_id[0], 'i4', (level_id[0],),
+                                level = _nc.createVariable(level_id[0], 'f4', (level_id[0],),
                                                                  zlib=zlib,
                                                                  complevel=complevel)
                                 level[:] = val[typLev].level

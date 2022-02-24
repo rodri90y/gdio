@@ -1,6 +1,6 @@
 package:
   name: gdio
-  version: 0.2.3
+  version: 0.2.4
 
 source:
   git_url: https://github.com/rodri90y/gdio.git
