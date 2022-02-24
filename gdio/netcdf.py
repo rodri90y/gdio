@@ -3,7 +3,7 @@ __date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.2"
+__version__ = "version 0.2.4"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -93,7 +93,7 @@ class netcdf(object):
                 rename_vars={}):
         '''
         Load netcdf files
-        Yamamoto, R @ Out.2019, Carlos Silva
+        Rodrigo Yamamoto @ Fev.2021, Carlos Silva
         :param ifile:       string
                             netcdf file name
         :param vars:        list
@@ -108,7 +108,8 @@ class netcdf(object):
         :param rename_vars: dictonary
                             rename variables names (key) for a new name (value).
                             Eg. {'tmpmdl': 't', 'tmpprs': 't'}
-        :return:            dict
+        :return:            dictonary/attributes
+                            multiple time data container
         '''
 
         data = objectify()
@@ -260,6 +261,8 @@ class netcdf(object):
                             else:
                                 data[key] = __tmp
                                 data[key].level_type = [typLev]
+                                self.variables.append(key)
+
 
                 elif key in self.__fields_time:
                     data.update({key: self.time[start:stop]})
@@ -294,7 +297,10 @@ class netcdf(object):
     def nc_write(self, ifile,
                  data,
                  zlib=True,
-                 netcdf_format='NETCDF4'):
+                 netcdf_format='NETCDF4',
+                 complevel=4,
+                 least_significant_digit=None
+                 ):
         '''
         Write netcdf file
 
@@ -306,6 +312,14 @@ class netcdf(object):
                                 enable compression
         :param netcdf_format:   string
                                 netcdf format: NETCDF4, NETCDF4_CLASSIC, NETCDF3_CLASSIC or NETCDF3_64BIT
+
+        :param complevel:       int (default 4)
+                                compression level
+
+        :param least_significant_digit: int (default None)
+                                        specify the power of ten of the smallest decimal place in the data that is a
+                                        reliable value that dramatically improve zlib compression by quantizing
+                                        (or truncating) the data
         :return:
         '''
 
@@ -327,7 +341,7 @@ class netcdf(object):
 
             if key in self.__fields_time:
                 _nc.createDimension('time', len(val))
-                time = _nc.createVariable('time', 'f8', ('time',), zlib=zlib)
+                time = _nc.createVariable('time', 'f4', ('time',), zlib=zlib)
                 time.standard_name = 'time'
                 time.units = "{0} since {1}".format(data.get('time_units'), data.get('ref_time'))
                 time.calendar = 'standard'
@@ -353,7 +367,9 @@ class netcdf(object):
                         if 'level_type' in val.keys():
                             if level_id and level_id[0] not in _nc.dimensions:
                                 _nc.createDimension(level_id[0], len(val[typLev].level))
-                                level = _nc.createVariable(level_id[0], 'f8', (level_id[0],), zlib=zlib)
+                                level = _nc.createVariable(level_id[0], 'f4', (level_id[0],),
+                                                                 zlib=zlib,
+                                                                 complevel=complevel)
                                 level[:] = val[typLev].level
                                 level.units = typLev
                                 level.axis = 'z' if level_id[0] in ['level'] else 'e'
@@ -363,7 +379,9 @@ class netcdf(object):
                         if any(k in val.keys() for k in self.__fields_latitude):
                             if not 'latitude' in _nc.dimensions:
                                 _nc.createDimension('latitude', len(val.latitude))
-                                lat = _nc.createVariable('latitude', 'f8', ('latitude',), zlib=zlib)
+                                lat = _nc.createVariable('latitude', 'f4', ('latitude',),
+                                                                 zlib=zlib,
+                                                                 complevel=complevel)
                                 lat.standard_name = 'latitude'
                                 lat.long_name = 'latitude'
                                 lat.units = 'degrees_north'
@@ -376,7 +394,9 @@ class netcdf(object):
                         if any(k in val.keys() for k in self.__fields_longitude):
                             if not 'longitude' in _nc.dimensions:
                                 _nc.createDimension('longitude', len(val.longitude))
-                                lon = _nc.createVariable('longitude', 'f8', ('longitude',), zlib=zlib)
+                                lon = _nc.createVariable('longitude', 'f4', ('longitude',),
+                                                                 zlib=zlib,
+                                                                 complevel=complevel)
                                 lon.standard_name = 'longitude'
                                 lon.long_name = 'longitude'
                                 lon.units = 'degrees_east'
@@ -396,17 +416,21 @@ class netcdf(object):
                                 if val[typLev].value.ndim > 4 and val[typLev].value.shape[0] > 1:
                                     if not 'ensemble' in _nc.dimensions:
                                         _nc.createDimension('ensemble', val[typLev].value.shape[0])
-                                        ens = _nc.createVariable('ensemble', 'f8', ('ensemble',), zlib=zlib)
+                                        ens = _nc.createVariable('ensemble', 'i4', ('ensemble',),
+                                                                 zlib=zlib,
+                                                                 complevel=complevel)
                                         ens.standard_name = 'ensemble'
                                         ens.long_name = 'Ensemble member'
                                         ens.axis = 'e'
                                         dims.append('ensemble')
 
                                 # variable setup
-                                ncvar = _nc.createVariable(key, "f8",
+                                ncvar = _nc.createVariable(key, "f4",
                                                            sorted(dims + z_dims,
                                                                   key=lambda d: self.__fields_order.index(d)),
-                                                           zlib=True)
+                                                           zlib=True,
+                                                           complevel=complevel,
+                                                           least_significant_digit=least_significant_digit)
 
                                 if 'ensemble' in _nc.dimensions:
                                     if len(dims + z_dims) == 5:
