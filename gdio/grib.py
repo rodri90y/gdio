@@ -14,8 +14,8 @@ from datetime import datetime, timedelta
 import numpy as np
 
 from gdio import cgrib
-from gdio.commons import near_yx, objectify
-
+from gdio.commons import near_yx, objectify, dict_get, timestep_to_datetime
+from .definitions.Table_4_4 import UNIT_TIME_RANGE
 
 class grib(object):
 
@@ -26,28 +26,24 @@ class grib(object):
         self.coordinates = list()
         self.variables = list()
 
-        self.unitOfTimeRange = {
-            None: None,
-            0: 'minutes',
-            1: 'hours',
-            2: 'days',
-            3: 'months',
-            4: 'years',
-            5: 'decades',
-            6: 'normal',
-            7: 'century',
-            10: '3 hours',
-            11: '6 hours',
-            12: '12 hours',
-            13: 'seconds',
-            255: 'missing'
-        }
+        self.unitOfTimeRange = UNIT_TIME_RANGE
+
         self.__fields_latitude = ['latitude', 'lat', 'xlat', 'LATITUDE']
         self.__fields_longitude = ['longitude', 'lon', 'xlon', 'LONGITUDE']
         self.__fields_time = ['time', 'TIME', 'ref_time', 'time_units']
         self.__fields_3dlevel = ['isobaricInhPa', 'hybrid', 'sigma', 'eta', 'theta',
                                  'sigmaLevel', 'isentropic']
         self.fields_ensemble = 'perturbationNumber'
+        self.__non_data_variables = [
+                                     'level_type',
+                                     'param_id',
+                                     'long_name',
+                                     'parameter_units',
+                                     'latitude',
+                                     'longitude',
+                                     'grid_type',
+                                     'projparams'
+                                     ]
         self.fields_ensemble_exception = [0]
 
         self.centre = 0
@@ -99,198 +95,208 @@ class grib(object):
         _data = objectify()
         data = objectify()
 
-        try:
+        # try:
 
-            msg = cgrib.fopen(ifile)
+        msg = cgrib.fopen(ifile)
 
-            # sort fields before use, warning high consumption of memory
-            if sort_before:
-                msg = [g for g in msg
-                       if (vars is None or g.shortName in vars or g.paramId in vars)
-                       and all(
-                           [g[k] in (v if isinstance(v, list) else [v]) for k, v in filter_by.items() if k in g.keys()])
-                       ]
-                msg.sort(key=lambda x: (
-                    x.validityDate, x.validityTime, x.paramId, x.typeOfLevel, x.level, x.perturbationNumber))
+        # sort fields before use, warning high consumption of memory
+        if sort_before:
+            msg = [g for g in msg
+                   if (vars is None or g.shortName in vars or g.paramId in vars)
+                   and all(
+                       [g[k] in (v if isinstance(v, list) else [v]) for k, v in filter_by.items() if k in g.keys()])
+                   ]
+            msg.sort(key=lambda x: (
+                x.validityDate, x.validityTime, x.paramId, x.typeOfLevel, x.level, x.perturbationNumber))
 
-            forecastDate = None
-            fcst_time = 0
-            concat_time = False
-            ref_time = None
-            msg_len = len(msg)
+        forecastDate = None
+        fcst_time = 0
+        concat_time = False
+        ref_time = None
+        msg_len = len(msg)
 
-            for n, gr in enumerate(msg):
+        for n, gr in enumerate(msg):
 
-                start = 0
-                stop = msg_len
-                cut_domain_roll = 0
+            start = 0
+            stop = msg_len
+            cut_domain_roll = 0
 
-                # filter by grib parameter
-                if all([gr[k] in (v if isinstance(v, list) else [v]) for k, v in filter_by.items() if k in gr.keys()]):
+            # filter by grib parameter
+            if all([gr[k] in (v if isinstance(v, list) else [v]) for k, v in filter_by.items() if k in gr.keys()]):
 
-                    # initialize time
-                    if forecastDate is None:
-                        self.history = "Created by gdio @ {date:%Y%m%d%H}".format(date=datetime.now())
-                        ref_time = datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute)
-                        self.grid_description = {k: v for k, v in gr.items() if k in gr.gridkeys}
-                        self.centre = gr.centre
+                # initialize time
+                if forecastDate is None:
+                    self.history = "Created by gdio @ {date:%Y%m%d%H}".format(date=datetime.now())
+                    ref_time = datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute)
+                    self.grid_description = {k: v for k, v in gr.items() if k in gr.gridkeys}
+                    self.centre = gr.centre
 
-                    # set time coordinate ....................
-                    if not forecastDate == self.fcstTime(gr):
-                        concat_time = True
-                        forecastDate = self.fcstTime(gr)
-                        fcst_time = int((forecastDate - ref_time).total_seconds() / (self.__unity(gr) * 3600))
-                        member_num = 0
+                # set time coordinate ....................
+                if not forecastDate == self.fcstTime(gr):
+                    concat_time = True
+                    forecastDate = self.fcstTime(gr)
+                    fcst_time = int((forecastDate - ref_time).total_seconds() / (self.__unity(gr.stepUnits) * 3600))
+                    member_num = 0
 
-                    # set temporal subdomain .......
-                    if isinstance(cut_time, tuple):
-                        start, stop = cut_time
-                        start = 0 if start is None else start
-                        stop = msg_len if stop is None else stop
+                # set temporal subdomain .......
+                if isinstance(cut_time, tuple):
+                    start, stop = cut_time
+                    start = 0 if start is None else start
+                    stop = msg_len if stop is None else stop
 
-                    if self.verbose:
-                        logging.debug(f'forecastDate: {forecastDate} / cut_time_range: {start}-{stop} / {gr.shortName}')
+                if self.verbose:
+                    logging.debug(f'forecastDate: {forecastDate} / cut_time_range: {start}-{stop}')
 
-                    # cut time between start and stop time
-                    if (not cut_time or (fcst_time >= start and fcst_time <= stop)):
+                # cut time between start and stop time
+                if (not cut_time or (fcst_time >= start and fcst_time <= stop)):
 
-                        typLev = gr.typeOfLevel
+                    typLev = gr.typeOfLevel
 
-                        if (level_type is None or typLev in level_type):
+                    if (level_type is None or typLev in level_type):
 
-                            if self.verbose:
-                                logging.debug('''{0}, {1}, {2}, {3}, {4}, {5} {6} {7}'''.format(gr.dataDate,
-                                                                                                gr.shortName,
-                                                                                                gr.paramId,
-                                                                                                gr.name,
-                                                                                                gr.typeOfLevel,
-                                                                                                gr.level,
-                                                                                                gr.values.shape,
-                                                                                                gr.get(
-                                                                                                    'perturbationNumber'))
-                                              )
+                        if self.verbose:
+                            logging.debug(f'''centre: {gr.centre}
+                            dataDate: {gr.dataDate}
+                            dataTime: {gr.dataTime}
+                            shortName: {gr.shortName}
+                            paramId: {gr.paramId}
+                            name: {gr.name}
+                            typeOfLevel: {gr.typeOfLevel}
+                            level: {gr.level}
+                            data shape: {gr.values.shape}
+                            perturbationNumber: {gr.get('perturbationNumber')} 
+                            gridType: {gr.gridType}
+                            projparams: {gr.projparams}
+                            ''')
 
-                            # handle the variable id
-                            idVar = gr.shortName if not gr.shortName in ['', 'unknown'] else str(gr.paramId)
+                        # handle the variable id
+                        idVar = gr.shortName if not gr.shortName in ['', 'unknown'] else str(gr.paramId)
 
-                            # rename variables
-                            for k, v in rename_vars.items():
-                                if idVar in k:
-                                    idVar = v
+                        # rename variables
+                        for k, v in rename_vars.items():
+                            if idVar in k:
+                                idVar = v
 
-                            # concatenate variables .......................................
-                            if vars is None or gr.shortName in vars or gr.paramId in vars:
+                        # concatenate variables .......................................
+                        if vars is None or gr.shortName in vars or gr.paramId in vars:
 
-                                # setup time ref/unity ...............
-                                if not ('ref_time' in data.keys() or 'time_units' in data.keys()):
-                                    data.update({'ref_time': ref_time})
-                                    unit_time_range = gr.get('unitOfTimeRange', gr.get('stepUnits', 255))
-                                    data.update({'time_units': self.unitOfTimeRange[unit_time_range]})
-                                    self.time_units = '{0} since {1}'.format(
-                                        self.unitOfTimeRange[unit_time_range], ref_time)
+                            # add data variables
+                            if idVar not in self.variables:
+                                self.variables.append(idVar)
 
-                                # merge time ...............
-                                if concat_time:
-                                    data = self.__concat_time(_data, data, fcst_time)
-                                    concat_time = False
-                                    _data = objectify()
+                            # setup time ref/unity ...............
+                            if not ('ref_time' in data.keys() or 'time_units' in data.keys()):
+                                data.update({'ref_time': ref_time})
+                                unit_time_range = gr.get('unitOfTimeRange', gr.get('stepUnits', 255))
+                                data.update({'time_units': self.unitOfTimeRange[unit_time_range]})
+                                self.time_units = '{0} since {1}'.format(
+                                    self.unitOfTimeRange[unit_time_range], ref_time)
 
-                                # set spatial coordinates ......
-                                self.lat, self.lon = gr.latlons()
+                            # merge time ...............
+                            if concat_time:
+                                data = self.__concat_time(_data, data, fcst_time)
+                                concat_time = False
+                                _data = objectify()
 
-                                # convert from -180,180 to 360 format
-                                self.lon = (self.lon + 360) % 360
+                            # set spatial coordinates ......
+                            self.lat, self.lon = gr.latlons()
 
-                                flip_lat = self.lat[-1, 0] < self.lat[0, 0]
+                            # convert from -180,180 to 360 format
+                            self.lon = (self.lon + 360) % 360
 
-                                if flip_lat:  # error with lat/lon 2 dims arrays
-                                    self.lat = np.flip(self.lat, axis=0)
+                            flip_lat = self.lat[-1, 0] < self.lat[0, 0]
 
-                                # select spatial subdomain .......
-                                y, x = [None, None], [None, None]
+                            if flip_lat:  # error with lat/lon 2 dims arrays
+                                self.lat = np.flip(self.lat, axis=0)
 
-                                if cut_domain:
-                                    if isinstance(cut_domain, tuple):
-                                        lat1, lon1, lat2, lon2 = cut_domain
-                                        while True:  # necessary 2 pass to fix 360 - 0 descontinuity
-                                            y, x = near_yx({'latitude': self.lat[:, 0], 'longitude': self.lon[0, :]},
-                                                           lats=[lat1, lat2], lons=[lon1, lon2])
+                            # select spatial subdomain .......
+                            y, x = [None, None], [None, None]
 
-                                            # if x0>x1 the longitude is rolled of x0 elements
-                                            # in order to avoid discontinuity 360-0 of the longitude
-                                            try:
-                                                if x[0] > x[1]:
-                                                    cut_domain_roll = -x[0]
-                                                    self.lon = np.roll(self.lon, cut_domain_roll, axis=1)
-                                                else:
-                                                    break
-                                            except BaseException:
+                            if cut_domain:
+                                if isinstance(cut_domain, tuple):
+                                    lat1, lon1, lat2, lon2 = cut_domain
+                                    while True:  # necessary 2 pass to fix 360 - 0 descontinuity
+                                        y, x = near_yx({'latitude': self.lat[:, 0], 'longitude': self.lon[0, :]},
+                                                       lats=[lat1, lat2], lons=[lon1, lon2])
+
+                                        # if x0>x1 the longitude is rolled of x0 elements
+                                        # in order to avoid discontinuity 360-0 of the longitude
+                                        try:
+                                            if x[0] > x[1]:
+                                                cut_domain_roll = -x[0]
+                                                self.lon = np.roll(self.lon, cut_domain_roll, axis=1)
+                                            else:
                                                 break
+                                        except BaseException:
+                                            break
 
-                                # trim lat/lon dimensions ......... Warning except lambert proj
-                                self.lat = self.lat[y[0]:y[1], 0]
-                                self.lon = self.lon[0, x[0]:x[1]]
+                            # trim lat/lon dimensions ......... Warning except lambert proj
+                            self.lat = self.lat[y[0]:y[1], 0]
+                            self.lon = self.lon[0, x[0]:x[1]]
 
-                                # if necessary roll longitude due discontinuity 360-0 of the longitude
-                                gr.values = np.roll(gr.values, cut_domain_roll, axis=-1)
+                            # if necessary roll longitude due discontinuity 360-0 of the longitude
+                            gr.values = np.roll(gr.values, cut_domain_roll, axis=-1)
 
-                                # get data ........................
-                                # grab data and flip the latitude axis if necessary
-                                if flip_lat:
-                                    _tmp = np.flip(gr.values, axis=0)[None, None, None, y[0]:y[1], x[0]:x[1]]
+                            # get data ........................
+                            # grab data and flip the latitude axis if necessary
+                            if flip_lat:
+                                _tmp = np.flip(gr.values, axis=0)[None, None, None, y[0]:y[1], x[0]:x[1]]
+                            else:
+                                _tmp = gr.values[None, None, None, y[0]:y[1], x[0]:x[1]]
+
+                            if idVar in _data.keys() and typLev in _data[idVar].keys():
+
+                                member_num = gr.get('perturbationNumber')
+
+                                # concatenate levels
+                                _data[idVar][typLev].value = np.concatenate((_data[idVar][typLev].value, _tmp),
+                                                                            axis=2)
+
+                                if gr.level not in _data[idVar][typLev].level:
+                                    _data[idVar][typLev].level.append(gr.level)
+
+                                if member_num not in _data[idVar][typLev].members:
+                                    _data[idVar][typLev].members.append(gr.perturbationNumber)
+
+                            else:
+                                member_num = gr.get('perturbationNumber', 0)
+
+                                __tmp = {
+                                    typLev: {'value': _tmp,
+                                             'level': [gr.level],
+                                             'members': [member_num]},
+                                    'param_id': gr.paramId,
+                                    'long_name': gr.name,
+                                    'parameter_units': gr.parameterUnits,
+                                    'latitude': self.lat,
+                                    'longitude': self.lon,
+                                    'grid_type': gr.gridType,
+                                    'projparams': gr.projparams
+                                }
+
+
+                                if idVar in _data.keys():
+                                    _data[idVar].update(__tmp)
+                                    _data[idVar].level_type.append(typLev)
                                 else:
-                                    _tmp = gr.values[None, None, None, y[0]:y[1], x[0]:x[1]]
+                                    _data[idVar] = __tmp
+                                    _data[idVar].level_type = [typLev]
 
-                                if idVar in _data.keys() and typLev in _data[idVar].keys():
 
-                                    member_num = gr.get('perturbationNumber')
+            # consolidate data for last time block  ................
+            if n + 1 == msg_len:
+                data = self.__concat_time(_data, data)
 
-                                    # concatenate levels
-                                    _data[idVar][typLev].value = np.concatenate((_data[idVar][typLev].value, _tmp),
-                                                                                axis=2)
+            self.coordinates.append('latitude')
+            self.coordinates.append('longitude')
+            self.coordinates.append('level')
+            self.coordinates.append('members')
 
-                                    if gr.level not in _data[idVar][typLev].level:
-                                        _data[idVar][typLev].level.append(gr.level)
+        # rearrange data (set member axis, sort levels and member data)
+        data = self.__arrange_data(data)
 
-                                    if member_num not in _data[idVar][typLev].members:
-                                        _data[idVar][typLev].members.append(gr.perturbationNumber)
-
-                                else:
-                                    member_num = gr.get('perturbationNumber', 0)
-
-                                    __tmp = {
-                                        typLev: {'value': _tmp,
-                                                 'level': [gr.level],
-                                                 'members': [member_num]},
-                                        'param_id': gr.paramId,
-                                        'long_name': gr.name,
-                                        'parameter_units': gr.parameterUnits,
-                                        'latitude': self.lat,
-                                        'longitude': self.lon
-                                    }
-
-                                    if idVar in _data.keys():
-                                        _data[idVar].update(__tmp)
-                                        _data[idVar].level_type.append(typLev)
-                                    else:
-                                        _data[idVar] = __tmp
-                                        _data[idVar].level_type = [typLev]
-
-                # consolidate data for last time block  ................
-                if n + 1 == msg_len:
-                    data = self.__concat_time(_data, data)
-
-                self.variables = list(data.keys())
-                self.coordinates.append('latitude')
-                self.coordinates.append('longitude')
-                self.coordinates.append('level')
-                self.coordinates.append('members')
-
-            # rearrange data (set member axis, sort levels and member data)
-            data = self.__arrange_data(data)
-
-        except Exception as e:
-            logging.error('''gdio.gb_load > {0}'''.format(e))
+        # except Exception as e:
+        #     logging.error('''gdio.gb_load > {0}'''.format(e))
 
         return data
 
@@ -307,8 +313,7 @@ class grib(object):
             if isinstance(v, dict):
                 try:
                     for l in v.keys():
-                        if not l in ['level_type', 'param_id', 'long_name',
-                                     'parameter_units', 'latitude', 'longitude']:
+                        if not l in self.__non_data_variables:
                             dims = list(data[k][l].value.shape)
                             levels = data[k][l].level
                             members = data[k][l].members
@@ -328,9 +333,10 @@ class grib(object):
                     logging.error('''gdio.__arrange_data > {0} {1}'''.format(k, e))
         return data
 
-    def gb_write(self, ifile,
+    def gb_write(self, ofile,
                  data,
-                 gri_format='GRIB1'):
+                 grib_format='GRIB2',
+                 packingType='grid_jpeg'):
         '''
         Write grib file
 
@@ -338,28 +344,113 @@ class grib(object):
                                 file path
         :param data:            dict
                                 dataset
-        :param gri_format:   string
+        :param gri_format:      string
                                 netcdf format: GRIB1 or GRIB2
+        :param packingType:     string
+                                packingType	Type of packing:
+                                    grid_simple
+                                    spectral_complex
+                                    spectral_simple
+                                    grid_simple_matrix
+                                    grid_complex
+                                    grid_complex_spatial_differencing
+                                    grid_jpeg
+                                    grid_png
+                                    grid_ieee
+                                    grid_simple_log_preprocessing
+                                    grid_second_order
         :return:
         '''
 
-        # print(data)
-        print(data.keys())
-        # ensemble loop
-        # time loop
+
+
+        data = data if isinstance(data, objectify) else objectify(data)
+
+
+        # convert timestep index to timeserie ......
+        # def dtp(t, ref, unity=1):
+        #     if isinstance(t, datetime):
+        #         return int((t - ref).total_seconds() / (60 * 60 * unity))
+        #     else:
+        #         return t
+        #
+        # convert_to_timestep = np.vectorize(dtp)
+
+
+        # convert timestep index to timeserie ......
+        def dtp(t, unity=1):
+            if not isinstance(t, datetime):
+                return timedelta(days=float(t * unity))
+            else:
+                return t
+
+        convert_to_datetime = np.vectorize(dtp)
+        # ..........................................
+
+        _step_type = data.time_units
+
+        if isinstance(data.time_units, str):
+            _, _step_type = dict_get(UNIT_TIME_RANGE, key=data.time_units)
+
+        data.time = data.ref_time + timestep_to_datetime(data.time, self.__unity(_step_type))
+        print("@@@", _step_type, data.ref_time ,data.time)
+
+
+        grb = cgrib.fwrite(filename=ofile)
+
         for t, timestep in enumerate(data.time):
 
-            print(t, timestep)
-            # variable loop
+            print(t)
 
             for idVar in self.__get_vars(data):
-                print(idVar)
+                print(">>>", idVar)
+                msg = {
+                        'edition': 2,
+                        'editionNumber': 2,
+                        'centre': 98,
+                        'subCentre': 0,
 
-                # if self.verbose:
-                #     logging.debug('''writing {var}'''.format(var=key))
-                # levels lopp
 
+                        # time namespace
+                        'dataDate': int(f'{data.time[t]:%Y%m%d}'),
+                        'dataTime': int(f'{data.time[t]:%H%M}'),
+                        'stepUnits': _step_type,
+                        'step': 0,
+                        'paramId': data[idVar].param_id,
+                        'shortName': idVar,
+                        'packingType': packingType,
+
+                        # projection namespace
+                        'gridType': data[idVar].grid_type,
+                        'latitude': data[idVar].latitude,
+                        'longitude': data[idVar].longitude
+                        }
+
+                for level_type in data[idVar].get('level_type', ['surface']):
+
+                    msg.update({
+                                'typeOfLevel': level_type
+                                })
+
+                    if not level_type in self.__non_data_variables:
+
+                        dims = data[idVar][level_type].value.shape
+
+                        # level
+                        for l in range(dims[2]):
+
+                            msg.update({'level': data[idVar][level_type].level[l]})
+
+                            # ensemble loop
+                            for m in range(dims[0]):
+                                msg.update({'value': data[idVar][level_type].value[m,t,l]})
+                                grb.write(message=msg)
+
+
+
+        grb.close()
         return
+
 
     def __get_vars(self, data):
         '''
@@ -380,34 +471,35 @@ class grib(object):
         '''
 
         if gr.step > 0:
-            return datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute) + timedelta(hours=gr.step * self.__unity(gr))
+            return datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute) + timedelta(hours=gr.step * self.__unity(gr.stepUnits))
         else:
             return datetime(gr.year, gr.month, gr.day, gr.hour, gr.minute)
 
-    def __unity(self, gr):
+    def __unity(self, stepUnits=1):
         '''
         Scale fator to time unity transformation
-        :param gr:  object
-                    pygrig object
-        :return:    float
+        :param stepUnits:  int
+                           pygrig object
+        :return:           float
         '''
 
         scale = 1.0
 
-        if gr.stepUnits == 0:  # minute
+        if stepUnits == 0:  # minute
             scale = 1 / 60
-        elif gr.stepUnits == 1:  # hour
+        elif stepUnits == 1:  # hour
             scale = 1
-        elif gr.stepUnits == 2:  # day
+        elif stepUnits == 2:  # day
             scale = 24
-        elif gr.stepUnits == 3:  # month
+        elif stepUnits == 3:  # month
             scale = 24 * 30
-        elif gr.stepUnits == 4:  # year
+        elif stepUnits == 4:  # year
             scale = 24 * 365
-        elif gr.stepUnits == 5:  # decade
+        elif stepUnits == 5:  # decade
             scale = 10 * 24 * 365
 
         return scale
+
 
     def __concat_time(self, _data, __data, fcst_time=None):
         '''
@@ -426,8 +518,7 @@ class grib(object):
         for k, v in _data.items():
             if k in __data.keys():
                 for l in v.keys():
-                    if not l in ['level_type', 'param_id', 'long_name',
-                                 'parameter_units', 'latitude', 'longitude', 'members']:
+                    if not l in self.__non_data_variables:
                         __data[k][l].value = np.concatenate((__data[k][l].value, _data[k][l].value), axis=1)
             else:
                 __data[k] = _data[k]
@@ -442,6 +533,8 @@ class grib(object):
             self.time = __data['time']
 
         return __data
+
+
 
     @staticmethod
     def is_grib(ifile):
@@ -460,3 +553,4 @@ class grib(object):
                     return True
 
         return False
+

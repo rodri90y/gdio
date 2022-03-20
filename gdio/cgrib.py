@@ -1,7 +1,11 @@
 import numpy as np
 import pyproj
 from eccodes import *
+from .definitions.grib_namespace import *
+from .definitions.Table_4_4 import UNIT_TIME_RANGE
+from .definitions.Table_4_5 import TYPE_LEVEL
 
+from datetime import datetime, timedelta
 
 class cgrib():
 
@@ -9,38 +13,17 @@ class cgrib():
 
         self.perturbationNumber = 0
 
-        _gribkeys = [
-            'centre', 'editionNumber',
-            'dataDate', 'dataTime', 'unitOfTimeRange',
-            'year', 'month', 'day', 'hour', 'minute',
-            'validityDate', 'validityTime',
-            'step',
-            'stepUnits',
-            'paramId',
-            'typeOfLevel',
-            'level',
-            'shortName',
-            'name',
-            'parameterUnits'
-        ]
+        self.gridkeys = sorted(
+            GLOBAL_ATTRIBUTES_KEYS
+            + DATA_ATTRIBUTES_KEYS
+            + DATA_TIME_KEYS
+            + ENSEMBLE_KEYS
+            + VERTICAL_KEYS
+            + GRID_PROJ_KEYS
+        )
 
-        self.gridkeys = [
-            'gridType',
-            'latitudeOfFirstGridPointInDegrees', 'longitudeOfFirstGridPointInDegrees',
-            'latitudeOfLastGridPointInDegrees', 'longitudeOfLastGridPointInDegrees',
-            'Ni', 'Nj',
-            'iDirectionIncrementInDegrees', 'jDirectionIncrementInDegrees',
-            'truncateDegrees', 'grib2divider',
-            'angleOfRotationInDegrees', 'latitudeOfSouthernPoleInDegrees', 'longitudeOfSouthernPoleInDegrees',
-            'latitudeWhereDxAndDyAreSpecifiedInDegrees', 'projectionCentreFlag', 'orientationOfTheGridInDegrees',
-            'LoVInDegrees', 'LaDInDegrees', 'Latin1InDegrees', 'Latin2InDegrees',
-            'DxInMetres', 'DyInMetres', 'iScansPositively', 'jScansPositively',
-            'shapeOfTheEarth', 'radius', 'scaledValueOfEarthMajorAxis', 'scaledValueOfEarthMinorAxis',
-            'LaD', 'Latin',
-            'perturbationNumber', 'scaleFactorOfRadiusOfSphericalEarth'
-        ]
 
-        _keys = gribkeys if gribkeys else _gribkeys + self.gridkeys
+        _keys = gribkeys if gribkeys else self.gridkeys
 
         for k in _keys:
 
@@ -63,6 +46,7 @@ class cgrib():
                     setattr(self, k, eccodes.codes_get(gid, k))
             except KeyValueNotFoundError as e:
                 pass
+
 
         # value set
         self.values = codes_get_values(gid)
@@ -346,4 +330,212 @@ class fopen():
         return codes_count_in_file(self.f)
 
     def __exit__(self, exc_type, exc_value, traceback):
+        self.f.close()
+
+
+class fwrite():
+
+    def __init__(self, filename):
+        self.level = None
+        self.gid = 0
+        self.f = open(filename, 'wb')
+
+
+    def __set_message(self, message):
+
+        clone_id = codes_clone(self.gid)
+
+        # Add time namespace
+        self.__set_grib_time_keys(message)
+
+        # Add projection namespace
+        self.__set_grib_proj_keys(message)
+
+        for k, v in message.items():
+
+            try:
+                if k not in ['value',
+                             'latitude',
+                             'longitude']:
+                    codes_set(clone_id, k, v)
+            except Exception:
+                print("error:", k)
+                pass
+
+        codes_set_values(clone_id, message['value'].flatten())
+
+        return clone_id
+
+
+
+    def __set_grib_time_keys(self, message):
+
+        _date = message.get('dataDate', 19700101)
+        _time = message.get('dataTime', 0)
+        _step_type = message.get('stepUnits', 1)
+
+
+        message.update(
+            {
+                # "validityDate": _date,
+                # "validityTime": _time,
+                'date': _date,
+                'stepUnits': _step_type,
+                'startStep': 0,
+                'endStep': 0,
+                'stepRange': 0,
+                'year': _date // 10000,
+                'month': _date // 100 % 100,
+                'day': _date % 100,
+                'hour': _time // 100,
+                'minute': _time % 100,
+            }
+        )
+
+        return message
+
+
+    def __set_grib_proj_keys(self, message):
+
+        # grid dimensions
+
+        ny, nx = message['value'].shape
+
+        lons = message['longitude']
+        lon1, lon2 = lons[0], lons[-1]
+
+        lats = message['latitude']
+        lat1, lat2 = lats[0], lats[-1]
+
+        lon_scan_negatively = (lon2 < lon1)
+        lat_scan_negatively = (lat2 < lat1)
+
+        if lat_scan_negatively:
+            lats = np.flip(lats, axis=0)
+            lat1, lat2 = lat2, lat1
+            lat_scan_negatively = (lat2 < lat1)
+
+
+        delon = abs(lon2 - lon1) / (nx - 1)
+        delat = abs(lat2 - lat1) / (ny - 1)
+
+
+        if message['gridType'] in ['regular_gg', 'regular_ll']:
+
+            message['Ni'] = nx
+            message['Nj'] = ny
+
+            message['latitudeOfFirstGridPointInDegrees'] = lat1
+            message['latitudeOfLastGridPointInDegrees'] = lat2
+            message['longitudeOfFirstGridPointInDegrees'] = lon1
+            message['longitudeOfLastGridPointInDegrees'] = lon2
+
+            message['iDirectionIncrementInDegrees'] = delon
+            message['jDirectionIncrementInDegrees'] = delat
+
+            message["iScansNegatively"] = lon_scan_negatively
+            message["jScansNegatively"] = lat_scan_negatively  # <-- verificar
+
+            #ECCODES ERROR   :  First and last latitudes are inconsistent with scanning order: lat1=-40, lat2=20
+            # jScansPositively=0
+            # ECCODES ERROR   :  Unable to create iterator
+            # ECCODES ERROR   :  ecCodes: put_latlon: cannot get distinctLongitudes: Grid description is wrong or inconsistent
+
+
+        elif self['gridType'] == 'mercator':
+
+            message['Ni'] = nx
+            message['Nj'] = ny
+
+            message['latitudeOfFirstGridPointInDegrees'] = lat1
+            message['latitudeOfLastGridPointInDegrees'] = lat2
+            message['longitudeOfFirstGridPointInDegrees'] = lon1
+            message['longitudeOfLastGridPointInDegrees'] = lon2
+
+
+
+            # if self.get('LaD'):
+            #     projparams['lat_ts'] = self['LaD'] / 1000.
+            # else:
+            #     projparams['lat_ts'] = self['Latin'] / 1000.
+
+            # lat_ts
+            # pyproj: Latitude of true scale. Defines the latitude where scale is not distorted.
+            # Takes precedence over +k_0 if both options are used together.
+            # Defaults to 0.0.
+            # grib definition: LaD - LaD - Latitude(s) at which the Mercator projection intersects
+            # the Earth (Latitude(s) where Di and Dj are specified)
+
+            # due delat = abs(lat2 - lat1) / (ny - 1) --> lat_ts = lat1 + (lat2 - lat1)/2 or 0.0 middle point of grid
+            # message['LaD'] = lat_ts * 1000
+
+
+            # Notes ecmwf Section 3/Template 10:
+            # ( 1) Limited to the range of 0 to 90 degrees; if the angle of orientation of the grid is
+            # neither 0 nor 90 degrees, Di and Dj must be equal to each other.
+            # ( 2) Di and Dj Grid lengths are in units of 10-3 m, at the latitude specified by LaD.
+
+            # if self['truncateDegrees']:
+            #     lat1 = int(lat1)
+            #     lat2 = int(lat2)
+
+            raise ValueError('unsupported grid {0}'.format(self['gridType']))
+
+        elif self['gridType'] == 'lambert':
+            # lat1 = self['latitudeOfFirstGridPointInDegrees']
+            # lon1 = self['longitudeOfFirstGridPointInDegrees']
+            #
+            # nx = self['Ni']
+            # ny = self['Nj']
+            # dx = self['DxInMetres']
+            # dy = self['DyInMetres']
+            # pj = pyproj.Proj(self.projparams)
+            # llcrnrx, llcrnry = pj(lon1, lat1)
+            # # Set increment direction here for the grid.
+            # # NOTE: some GRIB files are arranged with first gridpoint
+            # # in top left, or top right corner for example...
+            # if self['iScansPositively'] == 0 and dx > 0:
+            #     dx = -dx
+            # if self['jScansPositively'] == 0 and dy > 0:
+            #     dy = -dy
+            # x = llcrnrx + dx * np.arange(nx)
+            # y = llcrnry + dy * np.arange(ny)
+            # x, y = np.meshgrid(x, y)
+            # lons, lats = pj(x, y, inverse=True)
+
+            raise ValueError('unsupported grid {0}'.format(self['gridType']))
+        else:
+            #detect the data grig projection
+            pass
+
+        return
+
+    def write(self, message) -> None:
+
+        self.__template_message(message)
+
+        gid = self.__set_message(message)
+
+        eccodes.codes_write(gid, self.f)
+
+
+
+
+    def __template_message(self, message):
+
+        level = str()
+
+        for k, v in TYPE_LEVEL.items():
+            if message.get('typeOfLevel') in v:
+                level = k
+
+        if self.level is None or self.level not in level:
+            grib_template = '{gridType}_{level_type}_grib{edition}'.format(level_type=level, **message)
+            self.level = level
+            self.gid = codes_new_from_samples(grib_template, eccodes.CODES_PRODUCT_GRIB)
+
+            # shapeOfTheEarth
+
+
+    def close(self):
         self.f.close()

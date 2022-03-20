@@ -68,8 +68,7 @@ class netcdf(object):
             'potentialVorticity': []
 
         }
-        self.__fields_3dlevel = ['isobaricInhPa', 'hybrid', 'sigma', 'eta',
-                                 'heightAboveGround', 'depthBelowLandLayer', 'pressureFromGroundLayer']
+        self.__fields_3dlevel = ['isobaricInhPa', 'hybrid', 'sigma', 'eta']
         self.__fields_order = ['ensemble', 'time', 'latitude', 'longitude']
         self.__fields_order = self.__fields_order[:2] + sum(self.__fields_level.values(), []) + self.__fields_order[2:]
 
@@ -416,7 +415,7 @@ class netcdf(object):
                                 if val[typLev].value.ndim > 4 and val[typLev].value.shape[0] > 1:
                                     if not 'ensemble' in _nc.dimensions:
                                         _nc.createDimension('ensemble', val[typLev].value.shape[0])
-                                        ens = _nc.createVariable('ensemble', 'i4', ('ensemble',),
+                                        ens = _nc.createVariable('ensemble', 'f4', ('ensemble',),
                                                                  zlib=zlib,
                                                                  complevel=complevel)
                                         ens.standard_name = 'ensemble'

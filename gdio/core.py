@@ -19,7 +19,7 @@ from functools import partial
 import numpy as np
 import numpy.ma as ma
 
-from gdio.commons import near_yx, objectify, show_data_structure
+from gdio.commons import near_yx, objectify, show_data_structure, timestep_to_datetime
 from gdio.grib import grib as gblib
 from gdio.netcdf import netcdf as nclib
 
@@ -182,12 +182,12 @@ class gdio(object):
         self.variables = list()
 
 
-        # convert timestep index to timeserie ......
-        def dtp(t, unity=1):
-            return timedelta(days=float(t * unity))
-
-        vf = np.vectorize(dtp)
-        # ..........................................
+        # # convert timestep index to timeserie ......
+        # def dtp(t, unity=1):
+        #     return timedelta(days=float(t * unity))
+        #
+        # vf = np.vectorize(dtp)
+        # # ..........................................
 
         pool = multiprocessing.Pool(processes=self.remap_n_processes)
 
@@ -219,14 +219,24 @@ class gdio(object):
                         griddes = lats_n.shape + lons_n.shape
 
                     # convert to day unity
-                    if _dat.get('time_units').lower() in ['hour', 'hours', 'hrs']:
-                        t_units = 1 / 24
-                    else:
+                    t_units = _dat.get('time_units').lower()
+
+                    if t_units in ['minute', 'minutes']:
+                        t_units = 1/60
+                    if t_units in ['hour', 'hours', 'hrs']:
                         t_units = 1
+                    elif t_units in ['day', 'days']:
+                        t_units = 24
+                    elif t_units in ['month', 'months']:
+                        t_units = 24 * 30
+                    elif t_units in ['year', 'years']:
+                        t_units = 24 * 24 * 365
+
 
                     if (vars is None or key in vars) \
                             and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:
 
+                        #add data variables
                         if key not in self.variables:
                             self.variables.append(key)
 
@@ -261,7 +271,7 @@ class gdio(object):
                                     del val.longitude, val.latitude
                                     del _tmp
 
-                            # update the lat/lon dimensions
+                            # update the lat/lon dimensions (por que?)
                             data['longitude'], data['latitude'] = lons_n, lats_n
 
                             # merge files ........................
@@ -292,12 +302,12 @@ class gdio(object):
                         if key in self.__fields_time:
                             if key in data.keys():  # merge datetime field
                                 try:
-                                    _time = ref_time + vf(_dat.get('time'), t_units)
+                                    _time = ref_time + timestep_to_datetime(_dat.get('time'), t_units)
                                     data[key] = np.concatenate((data[key], _time))
                                 except Exception as e:
                                     logging.error('''gdio.mload > error @ {0} - {1}'''.format(key, e))
                             else:
-                                data['time'] = ref_time + vf(_dat.get('time'), t_units)
+                                data['time'] = ref_time + timestep_to_datetime(_dat.get('time'), t_units)
                                 data['ref_time'] = _dat.get('ref_time')
                         else:
                             if key not in data.keys():
@@ -305,7 +315,7 @@ class gdio(object):
 
                 # do not merge files option ..............
                 if not merge_files:
-                    data.update({'time': ref_time + vf(_dat.get('time'), t_units)})
+                    data.update({'time': ref_time + timestep_to_datetime(_dat.get('time'), t_units)})
                     data.update({'ref_time': [_dat.get('ref_time')]})
 
                     self.dataset.append(data)

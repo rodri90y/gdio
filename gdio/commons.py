@@ -2,6 +2,7 @@ import difflib
 import  os
 import numpy as np
 
+from datetime import datetime, timedelta
 
 class objectify(dict):
     """ Nested Attribute Dictionary
@@ -64,6 +65,22 @@ class objectify(dict):
         other = self.__class__(*args, **kwargs)
         return super().update(other)
 
+def timestep_to_datetime(ts, units=1):
+    '''
+    Convert timestep index to timeserie
+    :param ts:          int list
+                        timestep list
+    :param unity:       int
+                        unit of time factor at hours
+    :return:
+    '''
+
+    __convert = np.vectorize(
+        lambda t, u: timedelta(hours=float(t * u)) if not isinstance(t, datetime) else t
+    )
+
+    return __convert(ts, units)
+
 
 def near_yx(data, lats=None, lons=None):
     '''
@@ -111,6 +128,7 @@ def near_yx(data, lats=None, lons=None):
 
     for lon in list(lons):
         _x = None
+
         if not lon is None:
             if np.min(_lon) <= lon and np.max(_lon) >= lon:
                 _x = np.nanargmin(np.abs(_lon - lon)) if lon is not None else lon
@@ -121,22 +139,36 @@ def near_yx(data, lats=None, lons=None):
 
 def dict_get(data, key=None, by='values'):
     '''
-    Get closest matches of list keys
+    Get closest matches of list keys, return
+    list of the best "good enough" matches
     :param data:    dict
 
     :param key:     str
     :param by:      str
+    :return:        list
                     lists or keys criteria
-    :return:
     '''
     if by == 'values':
         for k, v in data.items():
-            v = v if isinstance(v, list) else list(v)
+            v = v if isinstance(v, list) else [v]
             _k = difflib.get_close_matches(key, v, 1, 0.85)
+
             if _k:
                 return _k, k
     else:
         return data.get(key)
+
+
+def show_data_structure(data):
+    '''
+    Describe the data structure
+    :param data:    dict
+    return:
+    '''
+
+    for _dat in data:
+        __data_tree(_dat, depth=0)
+
 
 
 def __data_tree(data, depth=0):
@@ -170,13 +202,3 @@ def __data_tree(data, depth=0):
                                                              value=str(v))
                      )
 
-
-def show_data_structure(data):
-    '''
-    Describe the data structure
-    :param data:    dict
-    return:
-    '''
-
-    for _dat in data:
-        __data_tree(_dat, depth=0)

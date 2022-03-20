@@ -70,6 +70,8 @@ Structure data:
                 + value
                 + level
                 + members
+                + grid_type
+                + projparams
 
 Example:
             
