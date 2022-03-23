@@ -1,6 +1,7 @@
 import difflib
-import  os
+import os
 import numpy as np
+import itertools
 
 from datetime import datetime, timedelta
 
@@ -81,12 +82,13 @@ def timestep_to_datetime(ts, units=1):
 
     return __convert(ts, units)
 
-
 def near_yx(data, lats=None, lons=None):
     '''
     Find the nearst coordinate i/j given a lat/lon coordinate
     Warning error with lat/lon parameter with dims>1, only works with
     mercator, regular lat-lon
+    :param data:    dict
+                    latitude and longitude mesh data
     :param lat:     float
                     latitude
     :param lon:     float
@@ -118,23 +120,42 @@ def near_yx(data, lats=None, lons=None):
     # convert -180,180 to 0,360 format
     _lon = (_lon + 360) % 360
 
-    for lat in list(lats):
-        _y = None
+    import itertools
+
+    for lat, lon in itertools.zip_longest(lats, lons):
+
+        _x = np.zeros(_lon.shape)
+        _y = np.zeros(_lat.shape)
 
         if not lat is None:
             if np.min(_lat) <= lat and np.max(_lat) >= lat:
-                _y = np.nanargmin(np.abs(_lat - lat)) if lat is not None else lat
-        y.append(_y)
-
-    for lon in list(lons):
-        _x = None
+                _y = np.abs(_lat - lat)
+            else:
+                lat = None
 
         if not lon is None:
             if np.min(_lon) <= lon and np.max(_lon) >= lon:
-                _x = np.nanargmin(np.abs(_lon - lon)) if lon is not None else lon
-        x.append(_x)
+                _x = np.abs(_lon - lon)
+            else:
+                lon = None
+
+
+        xy_min = np.nanargmin((_y + _x))
+
+        #convert the 1D index to 2D index system
+        lat_index = xy_min // _lon.shape[1]
+        lon_index = xy_min - (lat_index * _lon.shape[1])
+
+        lat_index = None if lat is None else lat_index
+        lon_index = None if lon is None else lon_index
+
+        # print(lat, lon)
+        x.append(lon_index)
+        y.append(lat_index)
 
     return y, x
+
+
 
 
 def dict_get(data, key=None, by='values'):
