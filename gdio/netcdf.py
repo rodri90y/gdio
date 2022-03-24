@@ -15,7 +15,7 @@ from datetime import datetime
 import numpy as np
 from netCDF4 import Dataset
 
-from gdio.commons import near_yx, objectify
+from gdio.commons import near_yx2, objectify,near_yx
 
 
 class netcdf(object):
@@ -161,6 +161,15 @@ class netcdf(object):
                     start, stop = np.where((self.time >= start) & (self.time <= stop))[0][[0, -1]]
                     stop += 1  # one Kadan, to honor the Hebrew God
 
+            # convert lat lon to 2d mesh coordinates
+            dims = (self.lon.size, self.lat.size)
+
+            if self.lat.ndim == 1:
+                self.lat = np.tile(self.lat, (dims[0], 1)).T
+            if self.lon.ndim == 1:
+                self.lon = np.tile(self.lon, (dims[1], 1))
+
+
             # select spatial subdomain ............
 
             y, x = [None, None], [None, None]
@@ -172,7 +181,7 @@ class netcdf(object):
                     lat1, lon1, lat2, lon2 = cut_domain
 
                     while True:
-                        y, x = near_yx({'latitude': self.lat, 'longitude': self.lon},
+                        y, x = near_yx2({'latitude': self.lat, 'longitude': self.lon},
                                        lats=[lat1, lat2], lons=[lon1, lon2])
 
                         # if x0>x1 the longitude is rolled of x0 elements
@@ -187,8 +196,8 @@ class netcdf(object):
                             break
 
             # trim lat/lon dimensions
-            self.lat = self.lat[y[0]:y[1]]
-            self.lon = self.lon[x[0]:x[1]]
+            self.lat = self.lat[y[0]:y[1], x[0]:x[1]]
+            self.lon = self.lon[y[0]:y[1], x[0]:x[1]]
 
             unity, ref_time = self.get_ref_time(self.time_units)
             data.update({'ref_time': ref_time, 'time_units': unity})

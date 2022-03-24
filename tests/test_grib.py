@@ -1,4 +1,4 @@
-from gdio.commons import near_yx
+from gdio.commons import near_yx2
 from gdio.grib import grib
 import os
 import sys
@@ -68,23 +68,23 @@ class TestGribFiles(unittest.TestCase):
                              'incorrect time cut')
 
     def test_cut_space(self):
-        self.assertEqual(near_yx({'latitude': self.gbr.get('u').latitude,
+        self.assertEqual(near_yx2({'latitude': self.gbr.get('u').latitude,
                                   'longitude': self.gbr.get('u').longitude},
                                  lats=-23.54, lons=-46.64), self.expected_coordinate,
                          'problem with the spatial dimension')
 
 
 if __name__ == '__main__':
-    # unittest.main()
-    gr = grib(verbose=False)
-
-    path = 'data/era5_20191226-27_lev.grib' #'/home/rodrigo/data/ecmwf/ens/U_isobaric_ens.grb' #
-
-    ds = gr.gb_load(path)
+    unittest.main()
+    # gr = grib(verbose=False)
+    #
+    # path = 'data/era5_20191226-27_lev.grib' #'/home/rodrigo/data/ecmwf/ens/U_isobaric_ens.grb' #
+    #
+    # ds = gr.gb_load(path, cut_domain=(-20, 300, 10, 320))
 
     # print(ds.time_units)
     # print(ds.keys(),gbr['10u'].surface.value.shape)
-    # print(ds.keys(),gbr['t'].isobaricInhPa.value.shape)
+    # print(ds.keys(),ds['t'].latitude)
 
 
     # import numpy as np
@@ -124,5 +124,5 @@ if __name__ == '__main__':
     #             }
     #       }
     #
-    ofile = 'test.grb2'
-    gr.gb_write(ofile, ds)
+    # ofile = 'test.grb2'
+    # gr.gb_write(ofile, ds)

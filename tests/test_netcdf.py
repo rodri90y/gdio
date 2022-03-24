@@ -1,4 +1,4 @@
-from gdio.commons import near_yx
+from gdio.commons import near_yx2
 from gdio.netcdf import netcdf
 import os, io
 import sys
@@ -62,7 +62,7 @@ class TestNcFiles(unittest.TestCase):
                              'incorrect time cut')
 
     def test_cut_space(self):
-        self.assertEqual(near_yx({'latitude': self.nc.get('u').latitude,
+        self.assertEqual(near_yx2({'latitude': self.nc.get('u').latitude,
                                   'longitude': self.nc.get('u').longitude},
                                  lats=-23.54, lons=-46.64), self.expected_coordinate,
                          'problem with the spatial dimension')

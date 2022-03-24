@@ -7,6 +7,8 @@ GLOBAL_ATTRIBUTES_KEYS = [
 ]
 DATA_ATTRIBUTES_KEYS = [
     "paramId",
+    "parameterCategory",
+    "parameterNumber",
     "dataType",
     "numberOfPoints",
     "typeOfLevel",

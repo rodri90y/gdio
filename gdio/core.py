@@ -19,7 +19,7 @@ from functools import partial
 import numpy as np
 import numpy.ma as ma
 
-from gdio.commons import near_yx, objectify, show_data_structure, timestep_to_datetime
+from gdio.commons import near_yx2, objectify, show_data_structure, timestep_to_datetime
 from gdio.grib import grib as gblib
 from gdio.netcdf import netcdf as nclib
 
@@ -46,11 +46,6 @@ class gdio(object):
         self.fields_ensemble = 'perturbationNumber'
         self.fields_ensemble_exception = [0]
 
-        self.lon = None
-        self.lat = None
-        self.time = None
-        self.time_units = None
-        self.history = None
 
         logging.basicConfig(datefmt='%Y%-m-%dT%H:%M:%S', level=logging.DEBUG,
                             format='[%(levelname)s @ %(asctime)s] %(message)s')
@@ -216,7 +211,7 @@ class gdio(object):
                     # setting the standard projection/dimensions
                     if not griddes:
                         lons_n, lats_n = self.__get_dims(_dat, vars)
-                        griddes = lats_n.shape + lons_n.shape
+                        griddes = lats_n.shape
 
                     # convert to day unity
                     t_units = _dat.get('time_units').lower()
@@ -260,8 +255,10 @@ class gdio(object):
                                         for z in range(_tmp.shape[2]):
                                             try:
                                                 _tmp[m, :, z, :, :] = self.remapbil(val[typLev].value[m, :, z, :, :],
-                                                                                    val.longitude, val.latitude,
-                                                                                    lons_n, lats_n, order=1, masked=True)
+                                                                                    val.longitude[0,:], val.latitude[:,0],
+                                                                                    lons_n[0,:], lats_n[:,0],
+                                                                                    order=1, masked=True)
+
                                             except Exception as e:
                                                 logging.error(
                                                     '''gdio.mload > auto remapping grid error {0}'''.format(e))
@@ -410,7 +407,7 @@ class gdio(object):
 
             # select spatial subdomain
             if longitude or latitude:
-                y, x = near_yx(_dat, lats=latitude, lons=longitude)
+                y, x = near_yx2(_dat, lats=latitude, lons=longitude)
 
             for k, v in _dat.items():
 
@@ -465,17 +462,17 @@ class gdio(object):
 
                         if y:
                             if len(y) == 2:
-                                _dat[k] = _dat[k][y[0]:y[1]]
+                                _dat[k] = _dat[k][y[0]:y[1], x[0]:x[1]]
                             else:
-                                _dat[k] = _dat[k][y]
+                                _dat[k] = _dat[k][y, x]
 
                     elif k in ['longitude']:  # longitude coordinate
 
                         if x:
                             if len(x) == 2:
-                                _dat[k] = _dat[k][x[0]:x[1]]
+                                _dat[k] = _dat[k][y[0]:y[1], x[0]:x[1]]
                             else:
-                                _dat[k] = _dat[k][x]
+                                _dat[k] = _dat[k][y, x]
 
                     elif k in ['time']:  # time coordinate
 
