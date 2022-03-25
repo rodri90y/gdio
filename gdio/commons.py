@@ -82,7 +82,62 @@ def timestep_to_datetime(ts, units=1):
 
     return __convert(ts, units)
 
+
 def near_yx(data, lats=None, lons=None):
+    '''
+    Find the nearst coordinate i/j given a lat/lon coordinate
+    Warning error with lat/lon parameter with dims>1, only works with
+    mercator, regular lat-lon
+    :param lat:     float
+                    latitude
+    :param lon:     float
+                    longitude
+    :return:        float tuple lat, lon
+                    nearest grid point y/x
+    '''
+
+    lats = lats if isinstance(lats, list) else [lats]
+    lons = lons if isinstance(lons, list) else [lons]
+
+    lons = [(_lo + 360) % 360 if not _lo is None else _lo for _lo in lons]
+
+    x = []
+    y = []
+
+    if 'lat' in data.keys() or \
+            'lon' in data.keys():
+
+        _lat = data['lat']
+        _lon = data['lon']
+
+    elif 'latitude' in data.keys() or \
+            'longitude' in data.keys():
+
+        _lat = data['latitude']
+        _lon = data['longitude']
+
+    # convert -180,180 to 0,360 format
+    _lon = (_lon + 360) % 360
+
+    for lat, lon in itertools.zip_longest(lats, lons):
+
+        _y = None
+        _x = None
+
+        if not lat is None:
+            if np.min(_lat) <= lat and np.max(_lat) >= lat:
+                _y = np.nanargmin(np.abs(_lat - lat)) if lat is not None else lat
+
+        if not lon is None:
+            if np.min(_lon) <= lon and np.max(_lon) >= lon:
+                _x = np.nanargmin(np.abs(_lon - lon)) if lon is not None else lon
+
+        x.append(_x)
+        y.append(_y)
+
+    return y, x
+
+def near_yx2(data, lats=None, lons=None):
     '''
     Find the nearst coordinate i/j given a lat/lon coordinate
     Warning error with lat/lon parameter with dims>1, only works with
@@ -120,7 +175,6 @@ def near_yx(data, lats=None, lons=None):
     # convert -180,180 to 0,360 format
     _lon = (_lon + 360) % 360
 
-    import itertools
 
     for lat, lon in itertools.zip_longest(lats, lons):
 

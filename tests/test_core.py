@@ -1,5 +1,5 @@
 from datetime import datetime
-from gdio.commons import near_yx
+from gdio.commons import near_yx2
 from gdio.core import gdio
 import os
 import sys
@@ -87,7 +87,7 @@ class TestNcFiles(unittest.TestCase):
                         'incorrect interpolation (corrcoef={0:0.4f})'.format(corrcoef))
 
     def test_cut_space(self):
-        self.assertEqual(near_yx({'latitude': self.ds.dataset[0].get('latitude'),
+        self.assertEqual(near_yx2({'latitude': self.ds.dataset[0].get('latitude'),
                                   'longitude': self.ds.dataset[0].get('longitude')},
                                  lats=-23.54, lons=-46.64), self.expected_coordinate,
                          'problem with the spatial dimension')

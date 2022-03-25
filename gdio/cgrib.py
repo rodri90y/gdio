@@ -212,9 +212,9 @@ class cgrib():
             delat = self.get('jDirectionIncrementInDegrees', delat)
 
             delat = delat if lat1 < lat2 else delat * -1
-            lats = np.arange(lat1, lat2 + delat, delat)
+            lats = np.arange(lat1, lat2 + delat, delat)     # maybe a problem, lat2 + delat?
             delon = delon if lon1 < lon2 else delon * -1
-            lons = np.arange(lon1, lon2 + delon, delon)
+            lons = np.arange(lon1, lon2 + delon, delon)     # maybe a problem, lon2 + delon?
 
             lons, lats = np.meshgrid(lons, lats)
 
@@ -351,6 +351,7 @@ class fwrite():
         # Add projection namespace
         self.__set_grib_proj_keys(message)
 
+
         for k, v in message.items():
 
             try:
@@ -359,7 +360,7 @@ class fwrite():
                              'longitude']:
                     codes_set(clone_id, k, v)
             except Exception:
-                print("error:", k)
+                # print("error:", k)
                 pass
 
         codes_set_values(clone_id, message['value'].flatten())
@@ -374,16 +375,15 @@ class fwrite():
         _time = message.get('dataTime', 0)
         _step_type = message.get('stepUnits', 1)
 
-
         message.update(
             {
-                # "validityDate": _date,
-                # "validityTime": _time,
                 'date': _date,
                 'stepUnits': _step_type,
                 'startStep': 0,
+                'step': 0,
                 'endStep': 0,
                 'stepRange': 0,
+                'stepType': 'instant',
                 'year': _date // 10000,
                 'month': _date // 100 % 100,
                 'day': _date % 100,
@@ -397,20 +397,20 @@ class fwrite():
 
     def __set_grib_proj_keys(self, message):
 
-        # grid dimensions
+        # grid projection parameters
 
         ny, nx = message['value'].shape
 
         lons = message['longitude']
-        lon1, lon2 = lons[0], lons[-1]
+        lon1, lon2 = lons[0,0], lons[0, -1]
 
         lats = message['latitude']
-        lat1, lat2 = lats[0], lats[-1]
+        lat1, lat2 = lats[0,0], lats[-1,0]
 
         lon_scan_negatively = (lon2 < lon1)
         lat_scan_negatively = (lat2 < lat1)
 
-        if lat_scan_negatively:
+        if not lat_scan_negatively:
             lats = np.flip(lats, axis=0)
             lat1, lat2 = lat2, lat1
             lat_scan_negatively = (lat2 < lat1)
@@ -420,6 +420,13 @@ class fwrite():
         delat = abs(lat2 - lat1) / (ny - 1)
 
 
+        message['numberOfPoints'] = nx*ny
+
+
+        # message['gridType']
+
+
+        # specific grid projection parameters
         if message['gridType'] in ['regular_gg', 'regular_ll']:
 
             message['Ni'] = nx
@@ -452,39 +459,31 @@ class fwrite():
             message['longitudeOfFirstGridPointInDegrees'] = lon1
             message['longitudeOfLastGridPointInDegrees'] = lon2
 
-
-
-            # if self.get('LaD'):
-            #     projparams['lat_ts'] = self['LaD'] / 1000.
-            # else:
-            #     projparams['lat_ts'] = self['Latin'] / 1000.
-
             # lat_ts
             # pyproj: Latitude of true scale. Defines the latitude where scale is not distorted.
-            # Takes precedence over +k_0 if both options are used together.
-            # Defaults to 0.0.
-            # grib definition: LaD - LaD - Latitude(s) at which the Mercator projection intersects
+            # Takes precedence over +k_0 if both options are used together. Defaults to 0.0.
+            # grib definition: LaD - Latitude(s) at which the Mercator projection intersects
             # the Earth (Latitude(s) where Di and Dj are specified)
+            #   Notes ecmwf Section 3/Template 10:
+            #   Di and Dj Grid lengths are in units of 10-3 m, at the latitude specified by LaD.
 
-            # due delat = abs(lat2 - lat1) / (ny - 1) --> lat_ts = lat1 + (lat2 - lat1)/2 or 0.0 middle point of grid
-            # message['LaD'] = lat_ts * 1000
+            # Thus, due delat = abs(lat2 - lat1) / (ny - 1) --> lat_ts = lat1 + (lat2 - lat1)/2
+            # or 0.0 middle point of grid
 
+            lat_ts = lat1 + (lat2 - lat1) / 2
+            message['LaD'] = lat_ts * 1000
 
-            # Notes ecmwf Section 3/Template 10:
-            # ( 1) Limited to the range of 0 to 90 degrees; if the angle of orientation of the grid is
-            # neither 0 nor 90 degrees, Di and Dj must be equal to each other.
-            # ( 2) Di and Dj Grid lengths are in units of 10-3 m, at the latitude specified by LaD.
-
-            # if self['truncateDegrees']:
-            #     lat1 = int(lat1)
-            #     lat2 = int(lat2)
-
-            raise ValueError('unsupported grid {0}'.format(self['gridType']))
 
         elif self['gridType'] == 'lambert':
+
+            message['Ni'] = nx
+            message['Nj'] = ny
+
+            message['latitudeOfFirstGridPointInDegrees'] = lat1
+            message['longitudeOfFirstGridPointInDegrees'] = lon1
+
             # lat1 = self['latitudeOfFirstGridPointInDegrees']
             # lon1 = self['longitudeOfFirstGridPointInDegrees']
-            #
             # nx = self['Ni']
             # ny = self['Nj']
             # dx = self['DxInMetres']
@@ -510,7 +509,30 @@ class fwrite():
 
         return
 
-    def write(self, message) -> None:
+    def __proj_detection(self, message):
+
+        # detect projection
+        lons = message['longitude']
+        lats = message['latitude']
+
+        d2lon = np.diff(lons, n=2, axis=1)
+        d2lat = np.diff(lats, n=2, axis=0)
+
+
+        if np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all():
+            gridType = 'regular_ll'
+        elif np.isclose(d2lon, 0.0).all() and not np.isclose(d2lat, 0.0).all():
+            gridType = 'mercator'
+        elif not np.isclose(d2lon, 0.0).all() and not np.isclose(d2lat, 0.0).all():
+            gridType = 'lambert'
+        else:
+            gridType = 'unknown'
+
+        message['gridType'] = gridType
+
+        return gridType
+
+    def write(self, message, **kwargs) -> None:
 
         self.__template_message(message)
 
@@ -525,6 +547,9 @@ class fwrite():
 
         level = str()
 
+        if not message.get('gridType'):
+            self.__proj_detection(message)
+
         for k, v in TYPE_LEVEL.items():
             if message.get('typeOfLevel') in v:
                 level = k
@@ -533,8 +558,6 @@ class fwrite():
             grib_template = '{gridType}_{level_type}_grib{edition}'.format(level_type=level, **message)
             self.level = level
             self.gid = codes_new_from_samples(grib_template, eccodes.CODES_PRODUCT_GRIB)
-
-            # shapeOfTheEarth
 
 
     def close(self):

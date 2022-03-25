@@ -1,4 +1,4 @@
-from gdio.commons import near_yx
+from gdio.commons import near_yx2 as near_yx
 import os
 import sys
 import numpy as np
