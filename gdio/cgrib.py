@@ -371,24 +371,31 @@ class fwrite():
 
     def __set_grib_time_keys(self, message):
 
-        _date = message.get('dataDate', 19700101)
-        _time = message.get('dataTime', 0)
-        _step_type = message.get('stepUnits', 1)
+        data_type = message.get('dataType')
+        date = message.get('dataDate', 19700101)
+        time = message.get('dataTime', 0)
+        step_type = message.get('stepUnits', 1)
+
+        if data_type in ['fc']:
+            timestep = message.get('step', 0)
+        else:
+            timestep = 0
 
         message.update(
             {
-                'date': _date,
-                'stepUnits': _step_type,
-                'startStep': 0,
-                'step': 0,
-                'endStep': 0,
-                'stepRange': 0,
-                'stepType': 'instant',
-                'year': _date // 10000,
-                'month': _date // 100 % 100,
-                'day': _date % 100,
-                'hour': _time // 100,
-                'minute': _time % 100,
+                'date': date,
+                'stepUnits': step_type,
+                'forecastTime': timestep,
+                'startStep': timestep,
+                'endStep': timestep,
+                'stepRange': message.get('stepRange', timestep),
+                'stepType': message.get('stepType', 'instant'),
+                'year': date // 10000,
+                'month': date // 100 % 100,
+                'day': date % 100,
+                'hour': time // 100,
+                'minute': time % 100,
+                'second': 0
             }
         )
 
@@ -410,7 +417,7 @@ class fwrite():
         lon_scan_negatively = (lon2 < lon1)
         lat_scan_negatively = (lat2 < lat1)
 
-        if not lat_scan_negatively:
+        if lat_scan_negatively:
             lats = np.flip(lats, axis=0)
             lat1, lat2 = lat2, lat1
             lat_scan_negatively = (lat2 < lat1)

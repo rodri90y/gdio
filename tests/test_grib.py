@@ -76,15 +76,20 @@ class TestGribFiles(unittest.TestCase):
 
 if __name__ == '__main__':
     # unittest.main()
+    from datetime import datetime, timedelta
     gr = grib(verbose=False)
 
     path = 'data/era5_20191226-27_lev.grib' #'/home/rodrigo/data/ecmwf/ens/U_isobaric_ens.grb' #
+    # path = '/home/rodrigo/data/models/ecmwf/era5/era5_wnd10m_202101.grib'
+    # path = '/home/rodrigo/data/models/ncep/cfs/wnd10m.01.2021010100.daily.grb2'
 
-    ds = gr.gb_load(path, cut_domain=(-20, 300, 10, 320))
+    print(datetime.now())
+    ds = gr.gb_load(path)#, cut_domain=(-20, 300, 10, 320))
+    print(datetime.now())
     #
     # print(ds.time_units)
     # print(ds.keys(),gbr['10u'].surface.value.shape)
-    # print(ds.keys(),ds['t'].latitude.shape)
+    # print(ds.keys(),ds['t'].typeOfProcessedData)
 
 
     # import numpy as np
@@ -174,5 +179,7 @@ if __name__ == '__main__':
     #             }
     #       }
     #
-    ofile = 'test.grb2'
+    ofile = 'test_simple_2d.grb2'
+    print(datetime.now())
     gr.gb_write(ofile, ds)
+    print(datetime.now())
