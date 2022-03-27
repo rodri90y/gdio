@@ -241,6 +241,7 @@ class gdio(object):
                             if uniformize_grid:
 
                                 # grid resample, if spatial dimensions are different of first grid(z,lat,lon)
+
                                 if not val[typLev].value.shape[3:] == griddes:
 
                                     logging.info('''gdio.mload > auto remapping grid @ {0}'''.format(key))
@@ -258,7 +259,6 @@ class gdio(object):
                                                                                     val.longitude[0,:], val.latitude[:,0],
                                                                                     lons_n[0,:], lats_n[:,0],
                                                                                     order=1, masked=True)
-
                                             except Exception as e:
                                                 logging.error(
                                                     '''gdio.mload > auto remapping grid error {0}'''.format(e))

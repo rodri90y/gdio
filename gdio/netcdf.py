@@ -162,11 +162,9 @@ class netcdf(object):
                     stop += 1  # one Kadan, to honor the Hebrew God
 
             # convert lat lon to 2d mesh coordinates
-            dims = (self.lon.size, self.lat.size)
-
-            if self.lat.ndim == 1:
+            if self.lat.ndim == 1 and self.lon.ndim == 1:
+                dims = (self.lon.size, self.lat.size)
                 self.lat = np.tile(self.lat, (dims[0], 1)).T
-            if self.lon.ndim == 1:
                 self.lon = np.tile(self.lon, (dims[1], 1))
 
 

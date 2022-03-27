@@ -81,10 +81,10 @@ if __name__ == '__main__':
 
     path = 'data/era5_20191226-27_lev.grib' #'/home/rodrigo/data/ecmwf/ens/U_isobaric_ens.grb' #
     # path = '/home/rodrigo/data/models/ecmwf/era5/era5_wnd10m_202101.grib'
-    # path = '/home/rodrigo/data/models/ncep/cfs/wnd10m.01.2021010100.daily.grb2'
+    path = '/home/rodrigo/data/models/ncep/cfs/wnd10m.01.2021010100.daily.grb2'
 
     print(datetime.now())
-    ds = gr.gb_load(path)#, cut_domain=(-20, 300, 10, 320))
+    ds = gr.gb_load(path)#, cut_time=[0,24], cut_domain=(-20, 300, 10, 320))
     print(datetime.now())
     #
     # print(ds.time_units)
@@ -179,7 +179,13 @@ if __name__ == '__main__':
     #             }
     #       }
     #
-    ofile = 'test_simple_2d.grb2'
+    ofile = 'test_simple_1d.grb2'
     print(datetime.now())
-    gr.gb_write(ofile, ds)
+    gr.gb_write(ofile, ds,least_significant_digit=1,packingType='grid_simple')# grid_simple grid_jpeg
+    print(datetime.now())
+    ofile = 'test_simple_2d.grb2'
+    gr.gb_write(ofile, ds, least_significant_digit=2, packingType='grid_simple')  # grid_simple grid_jpeg
+    print(datetime.now())
+    ofile = 'test_simple_3d.grb2'
+    gr.gb_write(ofile, ds,least_significant_digit=3,packingType='grid_simple')# grid_simple grid_jpeg
     print(datetime.now())

@@ -202,19 +202,22 @@ class cgrib():
 
         if self['gridType'] in ['regular_gg', 'regular_ll']:
 
+            nx = self['Ni']
+            ny = self['Nj']
+
             lat1 = self['latitudeOfFirstGridPointInDegrees']
             lat2 = self['latitudeOfLastGridPointInDegrees']
             lon1 = self['longitudeOfFirstGridPointInDegrees']
             lon2 = self['longitudeOfLastGridPointInDegrees']
 
+            # The dLat and dLon are calculated to avoid grib key truncation errors and
+            # acumulative error in latitude a longitude array
             delon, delat = self.dlonlat()
-            delon = self.get('iDirectionIncrementInDegrees', delon)
-            delat = self.get('jDirectionIncrementInDegrees', delat)
 
             delat = delat if lat1 < lat2 else delat * -1
-            lats = np.arange(lat1, lat2 + delat, delat)     # maybe a problem, lat2 + delat?
+            lats = np.arange(lat1, lat2 + delat, delat)
             delon = delon if lon1 < lon2 else delon * -1
-            lons = np.arange(lon1, lon2 + delon, delon)     # maybe a problem, lon2 + delon?
+            lons = np.arange(lon1, lon2 + delon, delon)
 
             lons, lats = np.meshgrid(lons, lats)
 
@@ -422,16 +425,10 @@ class fwrite():
             lat1, lat2 = lat2, lat1
             lat_scan_negatively = (lat2 < lat1)
 
-
         delon = abs(lon2 - lon1) / (nx - 1)
         delat = abs(lat2 - lat1) / (ny - 1)
 
-
         message['numberOfPoints'] = nx*ny
-
-
-        # message['gridType']
-
 
         # specific grid projection parameters
         if message['gridType'] in ['regular_gg', 'regular_ll']:
@@ -448,13 +445,7 @@ class fwrite():
             message['jDirectionIncrementInDegrees'] = delat
 
             message["iScansNegatively"] = lon_scan_negatively
-            message["jScansNegatively"] = lat_scan_negatively  # <-- verificar
-
-            #ECCODES ERROR   :  First and last latitudes are inconsistent with scanning order: lat1=-40, lat2=20
-            # jScansPositively=0
-            # ECCODES ERROR   :  Unable to create iterator
-            # ECCODES ERROR   :  ecCodes: put_latlon: cannot get distinctLongitudes: Grid description is wrong or inconsistent
-
+            message["jScansNegatively"] = lat_scan_negatively
 
         elif self['gridType'] == 'mercator':
 
@@ -524,7 +515,6 @@ class fwrite():
 
         d2lon = np.diff(lons, n=2, axis=1)
         d2lat = np.diff(lats, n=2, axis=0)
-
 
         if np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all():
             gridType = 'regular_ll'
