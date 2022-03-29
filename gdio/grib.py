@@ -3,7 +3,7 @@ __date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Igor Santos"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.4"
+__version__ = "version 0.2.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -35,15 +35,16 @@ class grib(object):
                                  'sigmaLevel', 'isentropic']
         self.fields_ensemble = 'perturbationNumber'
         self.__non_data_variables = [
-                                     'dataType',
-                                     'level_type',
-                                     'param_id',
-                                     'long_name',
-                                     'parameter_units',
-                                     'latitude',
-                                     'longitude',
-                                     'grid_type',
-                                     'projparams'
+                                         'centre',
+                                         'dataType',
+                                         'level_type',
+                                         'param_id',
+                                         'long_name',
+                                         'parameter_units',
+                                         'latitude',
+                                         'longitude',
+                                         'grid_type',
+                                         'projparams'
                                      ]
         self.fields_ensemble_exception = [0]
 
@@ -68,7 +69,7 @@ class grib(object):
                 sort_before=False):
         '''
         Load grib file
-        Yamamoto, R @ Fev.2021
+        Yamamoto, R @ Mar.2022
         :param ifile:       string
                             grib 1 or 2 file name
         :param vars:        list
@@ -269,6 +270,7 @@ class grib(object):
                                                 typLev: {'value': _tmp,
                                                          'level': [gr.level],
                                                          'members': [member_num]},
+                                                'centre': gr.centre,
                                                 'dataType': gr.dataType,
                                                 'param_id': gr.paramId,
                                                 'long_name': gr.name,
@@ -303,7 +305,7 @@ class grib(object):
                     data = self.__arrange_data(data)
 
         except Exception as e:
-            logging.exception(e)
+            logging.exception(f'gdio.gb_load: {e}')
 
         return data
 
@@ -337,7 +339,7 @@ class grib(object):
                             data[k][l].value = data[k][l].value[np.argsort(members)]
                             data[k][l].members = sorted(members)
                 except Exception as e:
-                    logging.exception(e)
+                    logging.exception(f'gdio.__arrange_data: {e}')
         return data
 
     def gb_write(self,
@@ -345,7 +347,7 @@ class grib(object):
                  data,
                  packingType='grid_simple',
                  least_significant_digit=3,
-                 **kwargs):
+                 **kwargs) -> None:
         '''
         Write grib file
 
@@ -356,11 +358,8 @@ class grib(object):
         :param packingType:     string
                                 packingType	Type of packing:
                                     grid_simple
-                                    spectral_complex
                                     spectral_simple
                                     grid_simple_matrix
-                                    grid_complex
-                                    grid_complex_spatial_differencing
                                     grid_jpeg
                                     grid_png
                                     grid_ieee
@@ -370,6 +369,10 @@ class grib(object):
                                         specify the power of ten of the smallest decimal place in the data that is a
                                         reliable value that dramatically improve the compression by quantizing
                                         (or truncating) the data
+        :param kwargs:              key-value parameter
+                                    additional grib key: edition, editionNumber, centre, subCentre, discipline,
+                                                         dataType, missingValue
+
         :return:
         '''
 
@@ -410,7 +413,7 @@ class grib(object):
                 msg = {
                         'edition': kwargs.get('edition', 2),
                         'editionNumber': kwargs.get('editionNumber', 2),
-                        'centre': kwargs.get('centre', 98),
+                        'centre': kwargs.get('centre', data[idVar].centre),
                         'subCentre': kwargs.get('subCentre', 0),
                         'discipline': kwargs.get('discipline', 0),
                         'dataType': data_type,
@@ -451,13 +454,12 @@ class grib(object):
 
                             # ensemble loop
                             for m in range(dims[0]):
-                                msg.update({'value': data[idVar][level_type].value[m,t,l]})
+                                msg.update({'value': data[idVar][level_type].value[m,t,l].squeeze()})
                                 grb.write(message=msg)
 
 
         grb.close()
 
-        return
 
 
     def __get_vars(self, data):

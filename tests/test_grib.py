@@ -27,7 +27,8 @@ class TestGribFiles(unittest.TestCase):
                     packingType='grid_jpeg')
 
         # open new new grib
-        self.new_gbr = gr.gb_load(os.path.join(root, 'tmp.grib'))
+        self.new_gbr = gr.gb_load(os.path.join(root, 'tmp.grib'),
+                              rename_vars={'t': '2t'})
 
         os.remove(os.path.join(root, 'tmp.grib'))
 
@@ -98,7 +99,7 @@ class TestGribFiles(unittest.TestCase):
                                        decimal=3)
 
     def test_write_variables(self):
-        self.assertEqual(sorted(self.new_gbr.keys()).sort(), self.expected_variables,
+        self.assertEqual(sorted(self.new_gbr.keys()), self.expected_variables,
                          'incorrect number of variables')
 
 
