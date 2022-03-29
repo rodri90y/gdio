@@ -1,7 +1,8 @@
 from gdio.commons import near_yx2
 from gdio.netcdf import netcdf
-import os, io
+import os
 import sys
+import numpy as np
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -11,14 +12,22 @@ class TestNcFiles(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        nc = netcdf()
+        root = os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
 
-        path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
-                            'data/era5_20191227_lev.nc')
-        self.nc = nc.nc_load(path,
+        nc = netcdf()
+        self.nc = nc.nc_load(os.path.join(root, 'data/era5_20191227_lev.nc'),
                              cut_domain=(-30, -60, 10, -40),
                              cut_time=(12, 24),
                              rename_vars={'t': 't2m'})
+
+        # write new nc
+        nc.nc_write(os.path.join(root, 'tmp.nc'), self.nc)
+
+        # open new nc
+        self.new_nc = nc.nc_load(os.path.join(root, 'tmp.nc'))
+
+        os.remove(os.path.join(root, 'tmp.nc'))
+
 
     def setUp(self):
         self.expected_dim = (1, 1, 7, 80, 40)
@@ -26,7 +35,7 @@ class TestNcFiles(unittest.TestCase):
         self.expected_level_type = ['isobaricInhPa']
         self.expected_units = 'm s**-1'
         self.expected_coordinate = ([13], [27])
-        self.expected_variables = ['ref_time', 'time_units', 'time', 'r', 't2m', 'u', 'v']
+        self.expected_variables = sorted(['ref_time', 'time_units', 'time', 'r', 't2m', 'u', 'v'])
         self.expected_levels = [200, 300, 500, 700, 800, 950, 1000]
 
 
@@ -34,12 +43,9 @@ class TestNcFiles(unittest.TestCase):
         self.assertTrue(not self.nc is {})
 
     def test_variables_test(self):
-        self.assertEqual(list(self.nc.keys()), self.expected_variables,
+        self.assertEqual(sorted(list(self.nc.keys())), self.expected_variables,
                          'incorrect number of variables')
 
-    def test_variables_rename(self):
-        self.assertFalse(list(self.nc.keys()) in self.expected_variables,
-                         'variable rename fail')
 
     def test_varible_dimension(self):
         self.assertEqual(self.nc.get('u').isobaricInhPa.value.shape, self.expected_dim,
@@ -67,23 +73,24 @@ class TestNcFiles(unittest.TestCase):
                                  lats=-23.54, lons=-46.64), self.expected_coordinate,
                          'problem with the spatial dimension')
 
-    # def test_ncwrite(self):
-        # self.assertEqual(self.nc.get('u').parameter_units, self.expected_units,
-        #                  'units of u variable incorrect')
-        # nc = netcdf()
-        # path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
-        #              'data/output.nc')
-        # nc.nc_write(path, self.nc)
+    def test_write_data(self):
+        np.testing.assert_almost_equal(self.nc.get('u').isobaricInhPa.value,
+                                       self.new_nc.get('u').isobaricInhPa.value,
+                                       decimal=3)
 
-        # nc = netcdf()
-        # nc.nc_load(path)
-        # self.assertListEqual(
-        #     nc,
-        #     self.nc.)
+    def test_write_coord(self):
 
+        np.testing.assert_almost_equal(self.nc.get('u').latitude,
+                                       self.new_nc.get('u').latitude,
+                                       decimal=3)
+        np.testing.assert_almost_equal(self.nc.get('u').longitude,
+                                       self.new_nc.get('u').longitude,
+                                       decimal=3)
 
+    def test_write_variables(self):
+        self.assertEqual(sorted(self.new_nc.keys()), self.expected_variables,
+                         'incorrect number of variables')
 
-        pass
 
 
 if __name__ == '__main__':

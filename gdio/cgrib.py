@@ -2,7 +2,6 @@ import numpy as np
 import pyproj
 from eccodes import *
 from .definitions.grib_namespace import *
-from .definitions.Table_4_4 import UNIT_TIME_RANGE
 from .definitions.Table_4_5 import TYPE_LEVEL
 
 from datetime import datetime, timedelta
