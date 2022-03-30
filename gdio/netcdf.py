@@ -3,7 +3,7 @@ __date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.4"
+__version__ = "version 0.2.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -15,7 +15,7 @@ from datetime import datetime
 import numpy as np
 from netCDF4 import Dataset
 
-from gdio.commons import near_yx2, objectify,near_yx
+from gdio.commons import near_yx2, objectify, near_yx
 
 
 class netcdf(object):
@@ -162,11 +162,9 @@ class netcdf(object):
                     stop += 1  # one Kadan, to honor the Hebrew God
 
             # convert lat lon to 2d mesh coordinates
-            dims = (self.lon.size, self.lat.size)
-
-            if self.lat.ndim == 1:
+            if self.lat.ndim == 1 and self.lon.ndim == 1:
+                dims = (self.lon.size, self.lat.size)
                 self.lat = np.tile(self.lat, (dims[0], 1)).T
-            if self.lon.ndim == 1:
                 self.lon = np.tile(self.lon, (dims[1], 1))
 
 
@@ -386,6 +384,10 @@ class netcdf(object):
                         # add latitude dimension
                         if any(k in val.keys() for k in self.__fields_latitude):
                             if not 'latitude' in _nc.dimensions:
+
+                                if val.latitude.ndim > 1:
+                                    val.latitude = val.latitude[:,0]
+
                                 _nc.createDimension('latitude', len(val.latitude))
                                 lat = _nc.createVariable('latitude', 'f4', ('latitude',),
                                                                  zlib=zlib,
@@ -401,6 +403,10 @@ class netcdf(object):
                         # add longitude dimension
                         if any(k in val.keys() for k in self.__fields_longitude):
                             if not 'longitude' in _nc.dimensions:
+
+                                if val.longitude.ndim > 1:
+                                    val.longitude = val.longitude[0,:]
+
                                 _nc.createDimension('longitude', len(val.longitude))
                                 lon = _nc.createVariable('longitude', 'f4', ('longitude',),
                                                                  zlib=zlib,
@@ -451,7 +457,7 @@ class netcdf(object):
                                     elif len(dims + z_dims) == 3:
                                         ncvar[:] = val[typLev].value[0, :, 0, :, :]  # surface data
 
-                                ncvar.missing_value = 9.999e20
+                                ncvar.missing_value = 999999
                                 ncvar.units = str(val.get('parameter_units'))
 
         _nc.close()

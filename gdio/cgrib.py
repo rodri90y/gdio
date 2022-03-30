@@ -2,7 +2,6 @@ import numpy as np
 import pyproj
 from eccodes import *
 from .definitions.grib_namespace import *
-from .definitions.Table_4_4 import UNIT_TIME_RANGE
 from .definitions.Table_4_5 import TYPE_LEVEL
 
 from datetime import datetime, timedelta
@@ -202,19 +201,22 @@ class cgrib():
 
         if self['gridType'] in ['regular_gg', 'regular_ll']:
 
+            nx = self['Ni']
+            ny = self['Nj']
+
             lat1 = self['latitudeOfFirstGridPointInDegrees']
             lat2 = self['latitudeOfLastGridPointInDegrees']
             lon1 = self['longitudeOfFirstGridPointInDegrees']
             lon2 = self['longitudeOfLastGridPointInDegrees']
 
+            # The dLat and dLon are calculated to avoid grib key truncation errors and
+            # acumulative error in latitude a longitude array
             delon, delat = self.dlonlat()
-            delon = self.get('iDirectionIncrementInDegrees', delon)
-            delat = self.get('jDirectionIncrementInDegrees', delat)
 
             delat = delat if lat1 < lat2 else delat * -1
-            lats = np.arange(lat1, lat2 + delat, delat)     # maybe a problem, lat2 + delat?
+            lats = np.arange(lat1, lat2 + delat, delat)
             delon = delon if lon1 < lon2 else delon * -1
-            lons = np.arange(lon1, lon2 + delon, delon)     # maybe a problem, lon2 + delon?
+            lons = np.arange(lon1, lon2 + delon, delon)
 
             lons, lats = np.meshgrid(lons, lats)
 
@@ -358,9 +360,7 @@ class fwrite():
                 if k not in ['value',
                              'latitude',
                              'longitude']:
-                    # print(k,v)
                     codes_set(clone_id, k, v)
-
             except Exception:
                 # print("error:", k)
                 pass
@@ -373,22 +373,31 @@ class fwrite():
 
     def __set_grib_time_keys(self, message):
 
-        _date = message.get('dataDate', 19700101)
-        _time = message.get('dataTime', 0)
-        _step_type = message.get('stepUnits', 1)
+        data_type = message.get('dataType')
+        date = message.get('dataDate', 19700101)
+        time = message.get('dataTime', 0)
+        step_type = message.get('stepUnits', 1)
+
+        if data_type in ['fc']:
+            timestep = message.get('step', 0)
+        else:
+            timestep = 0
 
         message.update(
             {
-                'stepUnits': _step_type,
-                'startStep': 0,
-                'step': 0,
-                'endStep': 0,
-                'stepRange': 0,
-                'year': _date // 10000,
-                'month': _date // 100 % 100,
-                'day': _date % 100,
-                'hour': _time // 100,
-                'minute': _time % 100,
+                'date': date,
+                'stepUnits': step_type,
+                'forecastTime': timestep,
+                'startStep': timestep,
+                'endStep': timestep,
+                'stepRange': message.get('stepRange', timestep),
+                'stepType': message.get('stepType', 'instant'),
+                'year': date // 10000,
+                'month': date // 100 % 100,
+                'day': date % 100,
+                'hour': time // 100,
+                'minute': time % 100,
+                'second': 0
             }
         )
 
@@ -402,29 +411,23 @@ class fwrite():
         ny, nx = message['value'].shape
 
         lons = message['longitude']
-        lon1, lon2 = lons[0], lons[-1]
+        lon1, lon2 = lons[0,0], lons[0, -1]
 
         lats = message['latitude']
-        lat1, lat2 = lats[0], lats[-1]
+        lat1, lat2 = lats[0,0], lats[-1,0]
 
         lon_scan_negatively = (lon2 < lon1)
         lat_scan_negatively = (lat2 < lat1)
 
-        if not lat_scan_negatively:
+        if lat_scan_negatively:
             lats = np.flip(lats, axis=0)
             lat1, lat2 = lat2, lat1
             lat_scan_negatively = (lat2 < lat1)
 
-
         delon = abs(lon2 - lon1) / (nx - 1)
         delat = abs(lat2 - lat1) / (ny - 1)
 
-
         message['numberOfPoints'] = nx*ny
-
-
-        # message['gridType']
-
 
         # specific grid projection parameters
         if message['gridType'] in ['regular_gg', 'regular_ll']:
@@ -441,13 +444,7 @@ class fwrite():
             message['jDirectionIncrementInDegrees'] = delat
 
             message["iScansNegatively"] = lon_scan_negatively
-            message["jScansNegatively"] = lat_scan_negatively  # <-- verificar
-
-            #ECCODES ERROR   :  First and last latitudes are inconsistent with scanning order: lat1=-40, lat2=20
-            # jScansPositively=0
-            # ECCODES ERROR   :  Unable to create iterator
-            # ECCODES ERROR   :  ecCodes: put_latlon: cannot get distinctLongitudes: Grid description is wrong or inconsistent
-
+            message["jScansNegatively"] = lat_scan_negatively
 
         elif self['gridType'] == 'mercator':
 
@@ -475,9 +472,15 @@ class fwrite():
 
 
         elif self['gridType'] == 'lambert':
+
+            message['Ni'] = nx
+            message['Nj'] = ny
+
+            message['latitudeOfFirstGridPointInDegrees'] = lat1
+            message['longitudeOfFirstGridPointInDegrees'] = lon1
+
             # lat1 = self['latitudeOfFirstGridPointInDegrees']
             # lon1 = self['longitudeOfFirstGridPointInDegrees']
-            #
             # nx = self['Ni']
             # ny = self['Nj']
             # dx = self['DxInMetres']
@@ -509,18 +512,21 @@ class fwrite():
         lons = message['longitude']
         lats = message['latitude']
 
+        d2lon = np.diff(lons, n=2, axis=1)
+        d2lat = np.diff(lats, n=2, axis=0)
 
-        d2lon = np.diff(lons, n=2)
-        d2lat = np.diff(lats, n=2)
+        if np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all():
+            gridType = 'regular_ll'
+        elif np.isclose(d2lon, 0.0).all() and not np.isclose(d2lat, 0.0).all():
+            gridType = 'mercator'
+        elif not np.isclose(d2lon, 0.0).all() and not np.isclose(d2lat, 0.0).all():
+            gridType = 'lambert'
+        else:
+            gridType = 'unknown'
 
-        # regular projection
-        print(d2lon[::10])
-        print(d2lat[::10])
-        if all(np.isclose(d2lon, 0.0, rtol=1e-03)) \
-            and all(np.isclose(d2lon, 0.0, rtol=1e-03)):
-            print("regular")
+        message['gridType'] = gridType
 
-
+        return gridType
 
     def write(self, message, **kwargs) -> None:
 
@@ -537,8 +543,9 @@ class fwrite():
 
         level = str()
 
-        self.__proj_detection(message)
-        print(eccodes.codes_samples_path())
+        if not message.get('gridType'):
+            self.__proj_detection(message)
+
         for k, v in TYPE_LEVEL.items():
             if message.get('typeOfLevel') in v:
                 level = k
@@ -547,10 +554,6 @@ class fwrite():
             grib_template = '{gridType}_{level_type}_grib{edition}'.format(level_type=level, **message)
             self.level = level
             self.gid = codes_new_from_samples(grib_template, eccodes.CODES_PRODUCT_GRIB)
-
-
-
-            # shapeOfTheEarth
 
 
     def close(self):

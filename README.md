@@ -232,93 +232,6 @@ ds.fields_ensemble_exception = [0]
 ```
 
 
-#### Netcdf
-The class netcdf encapsulates all netcdf functions of reading and writing, as well as the cutting of time and spatial domains, returning the netcdf data as a dictionary type. The returned dictionary contains for each variable the value, param_id, type_level, level and parameter_units property.
-
-Simple reading
-```
-from gdio.netcdf import netcdf
-nc = netcdf(verbose=False)
-
-ds = nc.nc_load('tests/data/era5_20191227_lev.nc')
->>> ds.keys()
-dict_keys(['ref_time', 'time_units', 'time', 'r', 't', 'u', 'v'])
->>> print(ds.u.isobaricInhPa.value.shape)
-(1, 2, 7, 161, 241)
->>> print(ds.u.level_type)
-['isobaricInhPa']
->>> print(ds.u.keys())
-dict_keys(['isobaricInhPa', 'param_id', 'long_name', 'parameter_units', 'latitude', 'longitude', 'level_type'])
->>> print(ds.u.isobaricInhPa.level)
-[200, 300, 500, 700, 800, 950, 1000]
->>> print(ds.u.parameter_units)
-m s**-1
->>> print(ds.u.param_id)
-None
-```
-
-Reading a subsample in time (time 12-24) and space (bbox -30,-60 and 10,-40). The returned multilevels dictionary/attributes contains for each variable the value, param_id, type_level, level and parameter_units property.
-
-```
-ds = nc.nc_load('data/era5_20191227_lev.nc', cut_domain=(-30, -60, 10, -40), cut_time=(12, 24))
->>> print(ds.u.isobaricInhPa.value.shape)
-(1, 1, 7, 80, 40)
-```
-Rename variables
-A dictionary input will rename variables names (key) for a new name (value).
-Eg. {'tmpmdl': 't', 'tmpprs': 't'}
-
-```
-ds = nc.nc_load('data/era5_20191227_lev.nc', rename_vars={'u':'10u'})
->>> ds.keys()
-dict_keys(['ref_time', 'time_units', 'time', 't', '10u', 'v', 'r'])
-```
-
-Writing a netcdf file
-
-From the loaded dataset
-```
-nc.nc_write('data/output.nc', ds)
-```
-From a dictionary
-```
-from datetime import datetime
-import numpy as np
-from gdio.netcdf import netcdf
-
-nc = netcdf(verbose=False)
-
-ds = {'ref_time': datetime(2019, 12, 27, 0, 0), 
-      'time_units': 'hours', 
-      'time': np.array([12]),
-      'u': {'isobaricInhPa': {  'value': np.random.random((1, 1, 7, 80, 40)),
-                                'level': [200, 300, 500, 700, 800, 950, 1000]
-                              },
-            'param_id': None, 
-            'long_name': 'U component of wind', 
-            'level_type': ['isobaricInhPa'],
-            'parameter_units': 'm s**-1',
-            'longitude': np.array([300. , 300.5, 301. , 301.5, 302. , 302.5, 303. , 303.5,
-               304. , 304.5, 305. , 305.5, 306. , 306.5, 307. , 307.5,
-               308. , 308.5, 309. , 309.5, 310. , 310.5, 311. , 311.5,
-               312. , 312.5, 313. , 313.5, 314. , 314.5, 315. , 315.5,
-               316. , 316.5, 317. , 317.5, 318. , 318.5, 319. , 319.5]),
-            'latitude': np.array([-30. , -29.5, -29. , -28.5, -28. , -27.5, -27. , -26.5,
-               -26. , -25.5, -25. , -24.5, -24. , -23.5, -23. , -22.5,
-               -22. , -21.5, -21. , -20.5, -20. , -19.5, -19. , -18.5,
-               -18. , -17.5, -17. , -16.5, -16. , -15.5, -15. , -14.5,
-               -14. , -13.5, -13. , -12.5, -12. , -11.5, -11. , -10.5,
-               -10. ,  -9.5,  -9. ,  -8.5,  -8. ,  -7.5,  -7. ,  -6.5,
-                -6. ,  -5.5,  -5. ,  -4.5,  -4. ,  -3.5,  -3. ,  -2.5,
-                -2. ,  -1.5,  -1. ,  -0.5,   0. ,   0.5,   1. ,   1.5,
-                 2. ,   2.5,   3. ,   3.5,   4. ,   4.5,   5. ,   5.5,
-                 6. ,   6.5,   7. ,   7.5,   8. ,   8.5,   9. ,   9.5]),
-            }
-      }
-
-nc.nc_write('data/output.nc', ds)
-```
-
 #### Grib
 The class netcdf encapsulates all grib functions, as well as the cutting of time and spatial domains , returning the netcdf data as a dictionary type.
 
@@ -383,6 +296,107 @@ Sorting grib parameter before (warning high, consumption of memory).
 Fix grib files unstructured or non-standard.
 ```
 ds = gr.gb_load('data/era5_20191227_lev.nc', sort_before=True)
+```
+#### Writing a netcdf file
+
+From the loaded dataset
+```
+nc.nc_write('data/output.nc', ds)
+```
+From a dictionary
+```
+from gdio.grib import grib
+gr = grib(verbose=False)
+ds = gr.gb_load('data/era5_20191226-27_lev.grib')
+
+gr.gb_write('output.grib', self.gbr, least_significant_digit=3, packingType='grid_jpeg')
+```
+
+#### Netcdf
+The class netcdf encapsulates all netcdf functions of reading and writing, as well as the cutting of time and spatial domains, returning the netcdf data as a dictionary type. The returned dictionary contains for each variable the value, param_id, type_level, level and parameter_units property.
+
+Simple reading
+```
+from gdio.netcdf import netcdf
+nc = netcdf(verbose=False)
+
+ds = nc.nc_load('tests/data/era5_20191227_lev.nc')
+>>> ds.keys()
+dict_keys(['ref_time', 'time_units', 'time', 'r', 't', 'u', 'v'])
+>>> print(ds.u.isobaricInhPa.value.shape)
+(1, 2, 7, 161, 241)
+>>> print(ds.u.level_type)
+['isobaricInhPa']
+>>> print(ds.u.keys())
+dict_keys(['isobaricInhPa', 'param_id', 'long_name', 'parameter_units', 'latitude', 'longitude', 'level_type'])
+>>> print(ds.u.isobaricInhPa.level)
+[200, 300, 500, 700, 800, 950, 1000]
+>>> print(ds.u.parameter_units)
+m s**-1
+>>> print(ds.u.param_id)
+None
+```
+
+Reading a subsample in time (time 12-24) and space (bbox -30,-60 and 10,-40). The returned multilevels dictionary/attributes contains for each variable the value, param_id, type_level, level and parameter_units property.
+
+```
+ds = nc.nc_load('data/era5_20191227_lev.nc', cut_domain=(-30, -60, 10, -40), cut_time=(12, 24))
+>>> print(ds.u.isobaricInhPa.value.shape)
+(1, 1, 7, 80, 40)
+```
+Rename variables
+A dictionary input will rename variables names (key) for a new name (value).
+Eg. {'tmpmdl': 't', 'tmpprs': 't'}
+
+```
+ds = nc.nc_load('data/era5_20191227_lev.nc', rename_vars={'u':'10u'})
+>>> ds.keys()
+dict_keys(['ref_time', 'time_units', 'time', 't', '10u', 'v', 'r'])
+```
+
+#### Writing a netcdf file
+
+From the loaded dataset
+```
+nc.nc_write('data/output.nc', ds)
+```
+From a dictionary
+```
+from datetime import datetime
+import numpy as np
+from gdio.netcdf import netcdf
+
+nc = netcdf(verbose=False)
+
+ds = {'ref_time': datetime(2019, 12, 27, 0, 0), 
+      'time_units': 'hours', 
+      'time': np.array([12]),
+      'u': {'isobaricInhPa': {  'value': np.random.random((1, 1, 7, 80, 40)),
+                                'level': [200, 300, 500, 700, 800, 950, 1000]
+                              },
+            'param_id': None, 
+            'long_name': 'U component of wind', 
+            'level_type': ['isobaricInhPa'],
+            'parameter_units': 'm s**-1',
+            'longitude': np.array([300. , 300.5, 301. , 301.5, 302. , 302.5, 303. , 303.5,
+               304. , 304.5, 305. , 305.5, 306. , 306.5, 307. , 307.5,
+               308. , 308.5, 309. , 309.5, 310. , 310.5, 311. , 311.5,
+               312. , 312.5, 313. , 313.5, 314. , 314.5, 315. , 315.5,
+               316. , 316.5, 317. , 317.5, 318. , 318.5, 319. , 319.5]),
+            'latitude': np.array([-30. , -29.5, -29. , -28.5, -28. , -27.5, -27. , -26.5,
+               -26. , -25.5, -25. , -24.5, -24. , -23.5, -23. , -22.5,
+               -22. , -21.5, -21. , -20.5, -20. , -19.5, -19. , -18.5,
+               -18. , -17.5, -17. , -16.5, -16. , -15.5, -15. , -14.5,
+               -14. , -13.5, -13. , -12.5, -12. , -11.5, -11. , -10.5,
+               -10. ,  -9.5,  -9. ,  -8.5,  -8. ,  -7.5,  -7. ,  -6.5,
+                -6. ,  -5.5,  -5. ,  -4.5,  -4. ,  -3.5,  -3. ,  -2.5,
+                -2. ,  -1.5,  -1. ,  -0.5,   0. ,   0.5,   1. ,   1.5,
+                 2. ,   2.5,   3. ,   3.5,   4. ,   4.5,   5. ,   5.5,
+                 6. ,   6.5,   7. ,   7.5,   8. ,   8.5,   9. ,   9.5]),
+            }
+      }
+
+nc.nc_write('data/output.nc', ds)
 ```
 
 
@@ -470,7 +484,7 @@ sel(data=None, latitude=None, longitude=None,
 ### gdio.grib.gb_load
 Load grib file
 ```
-def gb_load(selfifile, vars=None, level_type=None,
+def gb_load(ifile, vars=None, level_type=None,
             cut_time=None, cut_domain=None, filter_by={},
             rename_vars={}, sort_before=False)
 ```
@@ -507,13 +521,39 @@ def gb_load(selfifile, vars=None, level_type=None,
 **return: dictonary/attributes**\
 multiple time data container
 
+### gdio.grib.gb_write
+Write grib2 file
+```
+def gb_write(ofile, data, packingType='grid_simple', least_significant_digit=3, **kwargs))
+```
+**ifile: string**\
+file path
+
+**data: dict**\
+dataset
+
+**packingType: string**\
+packingType\
+- Type of packing:
+  - grid_simple
+  - spectral_simple
+  - grid_simple_matrix
+  - grid_jpeg
+  - grid_png
+  - grid_ieee
+  - grid_simple_log_preprocessing
+  - grid_second_order
+
+**least_significant_digit: int (default 3)**\
+Specify the power of ten of the smallest decimal place in the data that is a
+reliable value that dramatically improve the compression by quantizing
+(or truncating) the data
+
 ### gdio.netcdf.nc_load
 Load netcdf files
 ```
 nc_load(ifile, vars=None, cut_time=None, cut_domain=None, level_type=None, rename_vars={}):
 ```
-
-
 
 **ifile:       string**\
                     netcdf file name
@@ -625,7 +665,7 @@ https://github.com/rodri90y/gdio
 
 ## Contributing
 
-* 0.2.1
+* 0.2.5
     * alpha release
     
 

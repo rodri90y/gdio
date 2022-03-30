@@ -5,6 +5,7 @@ import itertools
 
 from datetime import datetime, timedelta
 
+
 class objectify(dict):
     """ Nested Attribute Dictionary
         A class to convert a nested Dictionary into an object with key-values
@@ -65,6 +66,7 @@ class objectify(dict):
     def update(self, *args, **kwargs):
         other = self.__class__(*args, **kwargs)
         return super().update(other)
+
 
 def timestep_to_datetime(ts, units=1):
     '''

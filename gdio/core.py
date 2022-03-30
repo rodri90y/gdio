@@ -3,7 +3,7 @@ __date__ = "2022.Fev"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.4"
+__version__ = "version 0.2.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -176,14 +176,6 @@ class gdio(object):
 
         self.variables = list()
 
-
-        # # convert timestep index to timeserie ......
-        # def dtp(t, unity=1):
-        #     return timedelta(days=float(t * unity))
-        #
-        # vf = np.vectorize(dtp)
-        # # ..........................................
-
         pool = multiprocessing.Pool(processes=self.remap_n_processes)
 
         if isinstance(files, str):
@@ -241,6 +233,7 @@ class gdio(object):
                             if uniformize_grid:
 
                                 # grid resample, if spatial dimensions are different of first grid(z,lat,lon)
+
                                 if not val[typLev].value.shape[3:] == griddes:
 
                                     logging.info('''gdio.mload > auto remapping grid @ {0}'''.format(key))
@@ -258,7 +251,6 @@ class gdio(object):
                                                                                     val.longitude[0,:], val.latitude[:,0],
                                                                                     lons_n[0,:], lats_n[:,0],
                                                                                     order=1, masked=True)
-
                                             except Exception as e:
                                                 logging.error(
                                                     '''gdio.mload > auto remapping grid error {0}'''.format(e))

@@ -2,12 +2,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='gdio',
-    version='0.2.4',
+    version='0.2.5',
     description='Gridded data io library',
     long_description='Gridded data io library. Grib and netcdf files handler, ',
     long_description_content_type='text/markdown',
     url='https://github.com/rodri90y/gdio',
-    download_url="https://github.com/rodri90y/gdio/archive/v0.2.4.tar.gz",
+    download_url="https://github.com/rodri90y/gdio/archive/v0.2.5.tar.gz",
     license='MIT',
     packages=find_packages(),
     author='Rodrigo Yamamoto',
