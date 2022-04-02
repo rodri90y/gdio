@@ -75,7 +75,7 @@ def timestep_to_datetime(ts, units=1):
                         timestep list
     :param unity:       int
                         unit of time factor at hours
-    :return:
+    :return:            datetime array
     '''
 
     __convert = np.vectorize(
@@ -84,6 +84,22 @@ def timestep_to_datetime(ts, units=1):
 
     return __convert(ts, units)
 
+def datetime_to_timestep(ts, ref, units=1):
+    '''
+    Convert timeserie index to timestep
+    :param ts:          datetime array
+    :param ref:         reference datetime
+    :param unity:       int
+                        unit of time factor at hours
+    :return:            int list
+                        timestep list
+    '''
+
+    __convert = np.vectorize(
+        lambda t, u: t.total_seconds() / 3600 * u
+    )
+
+    return __convert(ts-ref, units)
 
 def near_yx(data, lats=None, lons=None):
     '''

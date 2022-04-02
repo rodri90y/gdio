@@ -260,9 +260,6 @@ class gdio(object):
                                     del val.longitude, val.latitude
                                     del _tmp
 
-                            # update the lat/lon dimensions (por que?)
-                            data['longitude'], data['latitude'] = lons_n, lats_n
-
                             # merge files ........................
                             if merge_files:
 
