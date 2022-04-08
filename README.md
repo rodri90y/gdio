@@ -28,7 +28,6 @@ pip install --index-url https://test.pypi.org/simple/ --upgrade --no-cache-dir -
 conda config --add channels conda-forge
 
 + Python (3.7.9=> or later)
-+ numpy (1.21.5 or later)
 + netCDF4 (1.5.8 or later)
 + eccodes (2.24.2 or later)
 + python-eccodes (1.4.0 or later)

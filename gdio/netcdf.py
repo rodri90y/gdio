@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Fev"
+__date__ = "2022.Abr"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.6"
+__version__ = "version 0.2.7"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"

@@ -1,13 +1,16 @@
 from setuptools import setup, find_packages
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(
     name='gdio',
-    version='0.2.6',
+    version='0.2.7',
     description='Gridded data io library',
-    long_description='Gridded data io library. Grib and netcdf files handler, ',
+    long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/rodri90y/gdio',
-    download_url="https://github.com/rodri90y/gdio/archive/v0.2.6.tar.gz",
+    download_url="https://github.com/rodri90y/gdio/archive/v0.2.7.tar.gz",
     license='MIT',
     packages=find_packages(),
     author='Rodrigo Yamamoto',
