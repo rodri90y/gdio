@@ -115,6 +115,7 @@ class grib(object):
 
                     forecastDate = None
                     fcst_time = 0
+                    step_time = -1
                     concat_time = False
                     ref_time = None
                     msg_len = len(msg)
@@ -140,6 +141,7 @@ class grib(object):
                                 concat_time = True
                                 forecastDate = self.fcstTime(gr)
                                 fcst_time = int((forecastDate - ref_time).total_seconds() / (self.__unity(gr) * 3600))
+                                step_time += 1
                                 member_num = 0
 
                             # set temporal subdomain .......
@@ -152,7 +154,7 @@ class grib(object):
                                 logging.debug(f'forecastDate: {forecastDate} / cut_time_range: {start}-{stop} / {gr.shortName}')
 
                             # cut time between start and stop time
-                            if (not cut_time or (fcst_time >= start and (stop is float('inf') or fcst_time <= stop))):
+                            if (not cut_time or (step_time >= start and (stop is float('inf') or step_time <= stop))):
 
                                 typLev = gr.typeOfLevel
 

@@ -158,7 +158,6 @@ class netcdf(object):
                     start = 0 if start is None else start
                     stop = len(self.time) if stop is None else stop
 
-                    start, stop = np.where((self.time >= start) & (self.time <= stop))[0][[0, -1]]
                     stop += 1  # one Kadan, to honor the Hebrew God
 
             # convert lat lon to 2d mesh coordinates
@@ -386,9 +385,9 @@ class netcdf(object):
                             if not 'latitude' in _nc.dimensions:
 
                                 if val.latitude.ndim > 1:
-                                    val.latitude = val.latitude[:,0]
+                                    _latitude = val.latitude[:,0]
 
-                                _nc.createDimension('latitude', len(val.latitude))
+                                _nc.createDimension('latitude', len(_latitude))
                                 lat = _nc.createVariable('latitude', 'f4', ('latitude',),
                                                                  zlib=zlib,
                                                                  complevel=complevel)
@@ -397,7 +396,7 @@ class netcdf(object):
                                 lat.units = 'degrees_north'
                                 lat.grads_dim = 'Y'
 
-                                lat[:] = val.latitude
+                                lat[:] = _latitude
                                 dims.append('latitude')
 
                         # add longitude dimension
@@ -405,9 +404,9 @@ class netcdf(object):
                             if not 'longitude' in _nc.dimensions:
 
                                 if val.longitude.ndim > 1:
-                                    val.longitude = val.longitude[0,:]
+                                    _longitude = val.longitude[0,:]
 
-                                _nc.createDimension('longitude', len(val.longitude))
+                                _nc.createDimension('longitude', len(_longitude))
                                 lon = _nc.createVariable('longitude', 'f4', ('longitude',),
                                                                  zlib=zlib,
                                                                  complevel=complevel)
@@ -417,7 +416,7 @@ class netcdf(object):
                                 lon.grads_dim = 'x'
 
                                 # convert from 360 to -180,180 format
-                                lon[:] = ((val.longitude - 180) % 360) - 180
+                                lon[:] = ((_longitude - 180) % 360) - 180
 
                                 dims.append('longitude')
 

@@ -394,14 +394,16 @@ class gdio(object):
                 elif len(dates) > 0:
                     t = np.isin(_dat.get('time'), dates)
 
-            # select spatial subdomain
-            if longitude or latitude:
-                y, x = near_yx2(_dat, lats=latitude, lons=longitude)
 
             for k, v in _dat.items():
 
                 # cutting data array
                 if isinstance(v, dict):
+
+                    # select spatial subdomain
+                    if longitude or latitude:
+                        y, x = near_yx2({'latitude': _dat[k].latitude, 'longitude': _dat[k].longitude},
+                                        lats=latitude, lons=longitude)
 
                     for typLev in v.level_type:
 

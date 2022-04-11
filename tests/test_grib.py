@@ -18,7 +18,7 @@ class TestGribFiles(unittest.TestCase):
         gr = grib(verbose=False)
         self.gbr = gr.gb_load(os.path.join(root, 'data/era5_20191226-27_lev.grib'),
                               cut_domain=(-30, 300, 10, 320),
-                              cut_time=(12, 24),
+                              cut_time=(1, 2),
                               rename_vars={'t': '2t'})
 
         # write new grib
@@ -94,8 +94,8 @@ class TestGribFiles(unittest.TestCase):
         np.testing.assert_almost_equal(self.gbr.get('u').latitude,
                                        self.new_gbr.get('u').latitude,
                                        decimal=3)
-        np.testing.assert_almost_equal(self.gbr.get('u').longitude,
-                                       self.new_gbr.get('u').longitude,
+        np.testing.assert_almost_equal(self.gbr.get('r').longitude,
+                                       self.new_gbr.get('r').longitude,
                                        decimal=3)
 
     def test_write_variables(self):

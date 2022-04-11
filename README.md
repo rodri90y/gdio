@@ -61,18 +61,19 @@ Structure data:
         + time_units
         + time
         + variable (u,v,2t,etc) 
-            + level_type
+            + centre
+            + dataType
             + param_id
             + long_name
             + parameter_units
             + latitude
             + longitude
+            + grid_type
+            + projparams
             + isobaricInhPa/surface/maxWind/sigma (any level type key)
                 + value
                 + level
                 + members
-                + grid_type
-                + projparams
 
 Example:
             
