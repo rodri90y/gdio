@@ -17,7 +17,7 @@ class TestNcFiles(unittest.TestCase):
         nc = netcdf()
         self.nc = nc.nc_load(os.path.join(root, 'data/era5_20191227_lev.nc'),
                              cut_domain=(-30, -60, 10, -40),
-                             cut_time=(12, 24),
+                             cut_time=(1, 1),
                              rename_vars={'t': 't2m'})
 
         # write new nc
@@ -83,8 +83,8 @@ class TestNcFiles(unittest.TestCase):
         np.testing.assert_almost_equal(self.nc.get('u').latitude,
                                        self.new_nc.get('u').latitude,
                                        decimal=3)
-        np.testing.assert_almost_equal(self.nc.get('u').longitude,
-                                       self.new_nc.get('u').longitude,
+        np.testing.assert_almost_equal(self.nc.get('r').longitude,
+                                       self.new_nc.get('r').longitude,
                                        decimal=3)
 
     def test_write_variables(self):

@@ -5,9 +5,10 @@ A simple and concise gridded data IO library for reading multiples grib and netc
 
 The library gdio is based on my own professionals and personal needs as a meteorologist. 
 The currents libraries always fail when you need to read handle multiples large 
-netcdf/grib files, with differents resolutions and timesteps.
+netcdf/grib files, with different resolutions and time steps.
 
-After version 0.1.2 the output data was converted to object with key-values accessible using attribute notation, and after version 0.1.8 a new multilevel dictionary data structure.
+After version 0.1.2 the output data was converted to object with key-values accessible using attribute notation, and after version 0.1.8 a new multilevel dictionary data structure. 
+In the version 0.2.5 the latitude and longitude come in mesh array (ny,nx) format to support irregular or lambert projection.
 
 ## Instalation
 ```
@@ -18,7 +19,8 @@ if you are using pip install, before install manually the requirements
 
 conda create -n envname --file requirements/base.txt
 pip install gdio
-
+or
+pip install --index-url https://test.pypi.org/simple/ --upgrade --no-cache-dir --extra-index-url=https://pypi.org/simple/ gdio
 ```
 
 #### Required dependencies
@@ -26,7 +28,6 @@ pip install gdio
 conda config --add channels conda-forge
 
 + Python (3.7.9=> or later)
-+ numpy (1.21.5 or later)
 + netCDF4 (1.5.8 or later)
 + eccodes (2.24.2 or later)
 + python-eccodes (1.4.0 or later)
@@ -60,18 +61,19 @@ Structure data:
         + time_units
         + time
         + variable (u,v,2t,etc) 
-            + level_type
+            + centre
+            + dataType
             + param_id
             + long_name
             + parameter_units
             + latitude
             + longitude
+            + grid_type
+            + projparams
             + isobaricInhPa/surface/maxWind/sigma (any level type key)
                 + value
                 + level
                 + members
-                + grid_type
-                + projparams
 
 Example:
             
@@ -193,19 +195,21 @@ Prints the data structure tree.
     +-- ref_time: 2019-12-26 00:00:00
     +-- time_units: hours
     +-- time: <class 'numpy.ma.core.MaskedArray'> (6,)
-    +-- longitude: <class 'numpy.ndarray'> (80,)
-    +-- latitude: <class 'numpy.ndarray'> (160,)
     +-- r 
         +-- isobaricInhPa 
             +-- value: <class 'numpy.ndarray'> (1, 6, 7, 160, 80)
             +-- level: [200, 300, 500, 700, 800, 950, 1000]
             +-- members: [0]
+        +-- centre: 'ecmwf',
+        +-- dataType: 'an',
         +-- param_id: 157
         +-- long_name: Relative humidity
         +-- parameter_units: %
-        +-- latitude: <class 'numpy.ndarray'> (160,)
-        +-- longitude: <class 'numpy.ndarray'> (80,)
+        +-- latitude: <class 'numpy.ndarray'> (160, 80)
+        +-- longitude: <class 'numpy.ndarray'> (160, 80)
         +-- level_type: ['isobaricInhPa']
+        +-- grid_type: 'regular_ll'
+        +-- projparams: { 'a': 6371229.0, 'b': 6371229.0, 'proj': 'regular_ll'}
         
     .
     .
@@ -216,13 +220,18 @@ Prints the data structure tree.
         +-- value: <class 'numpy.ndarray'> (1, 6, 7, 160, 80)
         +-- level: [200, 300, 500, 700, 800, 950, 1000]
         +-- members: [0]
+    +-- centre: 'ecmwf',
+    +-- dataType: 'an',
     +-- param_id: 132
     +-- long_name: V component of wind
     +-- parameter_units: m s**-1
-    +-- latitude: <class 'numpy.ndarray'> (160,)
-    +-- longitude: <class 'numpy.ndarray'> (80,)
+    +-- latitude: <class 'numpy.ndarray'> (160, 80)
+    +-- longitude: <class 'numpy.ndarray'> (160, 80)
     +-- level_type: ['isobaricInhPa']
+    +-- grid_type: 'regular_ll'
+    +-- projparams: { 'a': 6371229.0, 'b': 6371229.0, 'proj': 'regular_ll'}
 ```
+
 
 Setting the ensemble grouping grib id key
 
@@ -248,7 +257,7 @@ dict_keys(['ref_time', 'time_units', 'time', 't', 'u', 'v', 'r'])
 >>> print(ds.u.level_type)
 ['isobaricInhPa']
 >>> print(ds.u.keys())
-dict_keys(['isobaricInhPa', 'param_id', 'long_name', 'parameter_units', 'latitude', 'longitude', 'level_type'])
+dict_keys(['centre', 'dataType','isobaricInhPa', 'param_id', 'long_name', 'parameter_units', 'latitude', 'longitude', 'level_type', 'grid_type', projparams])
 >>> print(ds.u.isobaricInhPa.level)
 [200, 300, 500, 700, 800, 950, 1000]
 >>> print(ds.u.parameter_units)
@@ -292,7 +301,7 @@ ds = gr.gb_load('data/era5_20191227_lev.nc', rename_vars={'u':'10u'})
 >>> ds.keys()
 dict_keys(['ref_time', 'time_units', 'time', 't', '10u', 'v', 'r'])
 ```
-Sorting grib parameter before (warning high, consumption of memory). 
+Sorting grib parameter before (extra consumption of memory and possible a little slow). 
 Fix grib files unstructured or non-standard.
 ```
 ds = gr.gb_load('data/era5_20191227_lev.nc', sort_before=True)
@@ -440,8 +449,9 @@ eg: filter_by={'perturbationNumber': [0,10],'level': [1000,500,250]} or filter_b
 rename variables names (key) for a new name (value). Eg. {'tmpmdl': 't', 'tmpprs': 't'}
 
 **sort_before:         bool**\
-Sort fields before process validityDate, validityTime, paramId, typeOfLevel, perturbationNumber and level. Warning high
-consumption of memory, just use when the grib data structure is not standard
+Sort fields before process validityDate, validityTime, paramId, typeOfLevel, 
+perturbationNumber and level. Warning extra consumption of memory and time, 
+just use when the grib data structure is not standard (default False)
 
 **return:**                    list of dictionaries
 
@@ -665,7 +675,7 @@ https://github.com/rodri90y/gdio
 
 ## Contributing
 
-* 0.2.5
+* 0.2.8
     * alpha release
     
 

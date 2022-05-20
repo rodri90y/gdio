@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Fev"
+__date__ = "2022.Mai"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.5"
+__version__ = "version 0.2.8"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -170,6 +170,7 @@ class gdio(object):
 
         data = objectify()
         griddes = ()
+        ntimes = 1
 
         ref_time = None
         t_units = 1
@@ -229,6 +230,9 @@ class gdio(object):
 
                         for typLev in val.level_type:
 
+                            # get number of times per file
+                            ntimes = val[typLev].value.shape[1]
+
                             # uniformize all grids ...........
                             if uniformize_grid:
 
@@ -259,9 +263,6 @@ class gdio(object):
 
                                     del val.longitude, val.latitude
                                     del _tmp
-
-                            # update the lat/lon dimensions (por que?)
-                            data['longitude'], data['latitude'] = lons_n, lats_n
 
                             # merge files ........................
                             if merge_files:
@@ -320,14 +321,17 @@ class gdio(object):
                             or key in self.__fields_level
                             or key in ['ref_time', 'time_units']):
                         for typLev in val.level_type:
+                            # usar t_units e shape do dado ultimo arquivo
+
                             data[key][typLev].value = np.concatenate((data[key][typLev].value,
-                                                                      np.ones((1, 1) + data[key][typLev].value.shape[2:]) * np.nan),
+                                                                      np.ones((1, ntimes) + data[key][typLev].value.shape[2:]) * np.nan),
                                                                      axis=1)
                     elif key in self.__fields_time:
-                        data[key] = np.concatenate((data[key], [data[key][-1] + timedelta(days=t_units)]))
-                    elif key in ['ref_time']:
-                        ref_time += timedelta(days=t_units)
-                        data[key] = np.concatenate((data[key], [ref_time]))
+                        dt = int((data[key][-1] - data[key][-2]).seconds / 3600)
+
+                        data[key] = np.concatenate(
+                            (data[key], data[key][-1] + timestep_to_datetime(range(dt, (ntimes+1)*dt, dt)))
+                        )
 
                 logging.warning('''io.load_nc > missing file applying null grid''')
 
@@ -397,14 +401,16 @@ class gdio(object):
                 elif len(dates) > 0:
                     t = np.isin(_dat.get('time'), dates)
 
-            # select spatial subdomain
-            if longitude or latitude:
-                y, x = near_yx2(_dat, lats=latitude, lons=longitude)
 
             for k, v in _dat.items():
 
                 # cutting data array
                 if isinstance(v, dict):
+
+                    # select spatial subdomain
+                    if longitude or latitude:
+                        y, x = near_yx2({'latitude': _dat[k].latitude, 'longitude': _dat[k].longitude},
+                                        lats=latitude, lons=longitude)
 
                     for typLev in v.level_type:
 

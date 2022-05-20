@@ -24,7 +24,7 @@ class TestNcFiles(unittest.TestCase):
             merge_files=True,
             uniformize_grid=True,
             cut_domain=(-30, 300, 10, 320),
-            cut_time=(12, 36),
+            cut_time=(1, 3),
             rename_vars={'t': 't2m'},
             inplace=True
         )
@@ -38,7 +38,7 @@ class TestNcFiles(unittest.TestCase):
         self.expected_levels = [200, 300, 500, 700, 800, 950, 1000]
         self.expected_level_type = ['isobaricInhPa']
         self.expected_units = 'm s**-1'
-        self.expected_variables = ['ref_time', 'time_units', 'time', 'longitude', 'latitude', 'r', 't2m', 'u', 'v']
+        self.expected_variables = sorted(['ref_time', 'time_units', 'time', 'r', 't2m', 'u', 'v'])
         self.expected_corrcoef = 0.94
         self.expected_sel = (1, 1, 4, 6, 18)
 
@@ -46,7 +46,7 @@ class TestNcFiles(unittest.TestCase):
         self.assertTrue(not self.ds.dataset is [])
 
     def test_variables_test(self):
-        self.assertEqual(list(self.ds.dataset[0].keys()), self.expected_variables,
+        self.assertEqual(sorted(self.ds.dataset[0].keys()), self.expected_variables,
                          'incorrect number of variables')
 
     def test_variables_rename(self):
@@ -87,8 +87,8 @@ class TestNcFiles(unittest.TestCase):
                         'incorrect interpolation (corrcoef={0:0.4f})'.format(corrcoef))
 
     def test_cut_space(self):
-        self.assertEqual(near_yx2({'latitude': self.ds.dataset[0].get('latitude'),
-                                  'longitude': self.ds.dataset[0].get('longitude')},
+        self.assertEqual(near_yx2({'latitude': self.ds.dataset[0].get('u').latitude,
+                                  'longitude': self.ds.dataset[0].get('u').longitude},
                                  lats=-23.54, lons=-46.64), self.expected_coordinate,
                          'problem with the spatial dimension')
 

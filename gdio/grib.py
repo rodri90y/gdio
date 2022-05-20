@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Fev"
+__date__ = "2022.Mai"
 __credits__ = ["Rodrigo Yamamoto", "Igor Santos"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.5"
+__version__ = "version 0.2.8"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -14,7 +14,7 @@ import os
 import numpy as np
 
 from gdio import cgrib
-from gdio.commons import near_yx2, objectify, dict_get, timestep_to_datetime
+from gdio.commons import near_yx2, objectify, dict_get, timestep_to_datetime, datetime_to_timestep
 from .definitions.Table_4_4 import UNIT_TIME_RANGE
 
 class grib(object):
@@ -111,10 +111,11 @@ class grib(object):
                                ]
 
                         msg.sort(key=lambda x: (
-                            x.validityDate, x.validityTime, x.paramId, x.typeOfLevel, x.level, x.perturbationNumber))
+                            x.dataDate, x.dataTime, x.step, x.paramId, x.typeOfLevel, x.level, x.perturbationNumber))
 
                     forecastDate = None
                     fcst_time = 0
+                    step_time = -1
                     concat_time = False
                     ref_time = None
                     msg_len = len(msg)
@@ -140,6 +141,7 @@ class grib(object):
                                 concat_time = True
                                 forecastDate = self.fcstTime(gr)
                                 fcst_time = int((forecastDate - ref_time).total_seconds() / (self.__unity(gr) * 3600))
+                                step_time += 1
                                 member_num = 0
 
                             # set temporal subdomain .......
@@ -152,7 +154,7 @@ class grib(object):
                                 logging.debug(f'forecastDate: {forecastDate} / cut_time_range: {start}-{stop} / {gr.shortName}')
 
                             # cut time between start and stop time
-                            if (not cut_time or (fcst_time >= start and (stop is float('inf') or fcst_time <= stop))):
+                            if (not cut_time or (step_time >= start and (stop is float('inf') or step_time <= stop))):
 
                                 typLev = gr.typeOfLevel
 
@@ -290,7 +292,7 @@ class grib(object):
                                                 _data[idVar].level_type = [typLev]
 
                         # consolidate data for last time block or stop time ................
-                        if n + 1 == msg_len or (fcst_time > stop):
+                        if n + 1 == msg_len:
 
                             data = self.__concat_time(_data, data)
 
@@ -299,7 +301,6 @@ class grib(object):
                             self.coordinates.append('longitude')
                             self.coordinates.append('level')
                             self.coordinates.append('members')
-                            break
 
                     # rearrange data (set member axis, sort levels and member data)
                     data = self.__arrange_data(data)
@@ -384,10 +385,15 @@ class grib(object):
             _, step_type = dict_get(UNIT_TIME_RANGE, key=data.time_units)
 
         # convert timestep to datetime if necessary
-        time = data.ref_time + timestep_to_datetime(data.time, self.__unity(step_type))
+        if isinstance(data.time[0], (int, np.int64)):
+            time = data.ref_time + timestep_to_datetime(data.time, units=self.__unity(step_type))
+        else:
+            time = data.time
 
         # step calculation
-        dt = np.array([0])
+        dt = 0
+        tshift = int((time[0] - data.ref_time).total_seconds() / (3600 * self.__unity(step_type)))
+
         if len(time) > 1:
             dt = int((time[1] - time[0]).total_seconds() / (3600 * self.__unity(step_type)))
 
@@ -422,7 +428,7 @@ class grib(object):
                         'dataDate': int(f'{timestep:%Y%m%d}'),
                         'dataTime': int(f'{timestep:%H%M}'),
                         'stepUnits': step_type,
-                        'step': t*dt,
+                        'step': t * dt + tshift,
 
                         # variable namespace
                         'paramId': data[idVar].param_id,
