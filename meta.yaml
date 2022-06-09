@@ -1,9 +1,10 @@
 package:
   name: gdio
-  version: 0.2.9
+  version: 0.3.0
 
 source:
-  path: ../gdio
+  git_url: https://github.com/rodri90y/gdio.git
+
 
 requirements:
   build:
