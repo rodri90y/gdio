@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='gdio',
-    version='0.2.9',
+    version='0.3.0',
     description='Gridded data io library',
     long_description=long_description,
     long_description_content_type='text/markdown',

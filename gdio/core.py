@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Mai"
+__date__ = "2022.Jun"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.2.9"
+__version__ = "version 0.3.0"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -171,8 +171,6 @@ class gdio(object):
         data = objectify()
         griddes = ()
         ntimes = 1
-
-        ref_time = None
         t_units = 1
 
         self.variables = list()
@@ -203,7 +201,7 @@ class gdio(object):
 
                     # setting the standard projection/dimensions
                     if not griddes:
-                        lons_n, lats_n = self.__get_dims(_dat, vars)
+                        lons_n, lats_n = self.__get_lonlat(_dat, vars)
                         griddes = lats_n.shape
 
                     # convert to day unity
@@ -335,16 +333,26 @@ class gdio(object):
 
                 logging.warning('''io.load_nc > missing file applying null grid''')
 
+
         self.coordinates.append('latitude')
         self.coordinates.append('longitude')
         self.coordinates.append('level')
         self.coordinates.append('members')
+
+
+        # trim time dimension
+        ntimes = self.get_max_dim(data)[1]
+
+        if len(data.time) > ntimes:
+            data.time = data.time[:ntimes]
 
         if inplace:
             if data:
                 self.dataset.append(data)
         else:
             return data
+
+
 
     def sel(self,
             __data=None,
@@ -669,18 +677,41 @@ class gdio(object):
 
         return dataout
 
-    def __get_dims(self, data, var=None):
+    def __get_lonlat(self, data, var=None):
         '''
-        Get grid data dimension
+        Get lat/lon data
         :param data:    dictionary
                         data
         :param var:     string
                         grid reference variable name
         :return:        tuple
-                        grid dimension, lat/lon of grid reference
+                        lat/lon of grid reference
         '''
 
         for key, val in data.items():
             if (var is None or key == var[0]) \
-                    and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:
+                    and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:    # var[0] limit the first variable dimension
                 return val.longitude, val.latitude
+
+
+    def get_max_dim(self, data=None, axis=1):
+        '''
+        Get max data dimension shape
+        :param data:    dictionary
+                        data
+        :param axis:    int
+                        dimension index
+        :return:        tuple
+                        data dimension shape
+        '''
+        if self.dataset:
+            data = self.dataset
+
+        dim = (0,0,0,0,0)
+
+        for k, v in data.items():
+            if isinstance(v, dict):
+                for typLev in v.level_type:
+                    if np.subtract(data[k][typLev].value.shape, dim)[axis]>0:
+                        dim = data[k][typLev].value.shape
+        return dim
