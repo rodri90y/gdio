@@ -10,7 +10,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/rodri90y/gdio',
-    download_url="https://github.com/rodri90y/gdio/archive/v0.2.9.tar.gz",
+    download_url="https://github.com/rodri90y/gdio/archive/v0.3.0.tar.gz",
     license='MIT',
     packages=find_packages(),
     author='Rodrigo Yamamoto',

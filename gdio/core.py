@@ -704,8 +704,6 @@ class gdio(object):
         :return:        tuple
                         data dimension shape
         '''
-        if self.dataset:
-            data = self.dataset
 
         dim = (0,0,0,0,0)
 
@@ -714,4 +712,5 @@ class gdio(object):
                 for typLev in v.level_type:
                     if np.subtract(data[k][typLev].value.shape, dim)[axis]>0:
                         dim = data[k][typLev].value.shape
+
         return dim
