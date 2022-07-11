@@ -5,12 +5,12 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='gdio',
-    version='0.3.0',
+    version='0.3.1',
     description='Gridded data io library',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/rodri90y/gdio',
-    download_url="https://github.com/rodri90y/gdio/archive/v0.3.0.tar.gz",
+    download_url="https://github.com/rodri90y/gdio/archive/v0.3.1.tar.gz",
     license='MIT',
     packages=find_packages(),
     author='Rodrigo Yamamoto',
@@ -21,6 +21,6 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.7.9',
+    python_requires='>=3.8.5',
     install_requires=['numpy', 'netCDF4', 'eccodes', 'pyproj'],
 )
