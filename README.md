@@ -27,7 +27,7 @@ pip install --index-url https://test.pypi.org/simple/ --upgrade --no-cache-dir -
 
 conda config --add channels conda-forge
 
-+ Python (3.7.9=> or later)
++ Python (3.8.5=> or later)
 + netCDF4 (1.5.8 or later)
 + eccodes (2.24.2 or later)
 + python-eccodes (1.4.0 or later)
@@ -675,7 +675,7 @@ https://github.com/rodri90y/gdio
 
 ## Contributing
 
-* 0.3.0
+* 0.3.1
     * alpha release
     
 

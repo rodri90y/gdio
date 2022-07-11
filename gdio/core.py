@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Jun"
+__date__ = "2022.Jul"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.0"
+__version__ = "version 0.3.1"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -343,7 +343,7 @@ class gdio(object):
         # trim time dimension
         ntimes = self.get_max_dim(data)[1]
 
-        if len(data.time) > ntimes:
+        if data and len(data.time) > ntimes:
             data.time = data.time[:ntimes]
 
         if inplace:
