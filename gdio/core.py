@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Jul"
+__date__ = "2022.Set"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.1"
+__version__ = "version 0.3.2"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -22,6 +22,7 @@ import numpy.ma as ma
 from gdio.commons import near_yx2, objectify, show_data_structure, timestep_to_datetime
 from gdio.grib import grib as gblib
 from gdio.netcdf import netcdf as nclib
+from gdio.hdf import hdf as hdlib
 
 warnings.filterwarnings("ignore")
 
@@ -105,6 +106,7 @@ class gdio(object):
             gb.fields_ensemble_exception = self.fields_ensemble_exception
 
             nc = nclib(verbose=self.verbose)
+            hd = hdlib(verbose=self.verbose)
 
             if gb.is_grib(ifile):
                 return gb.gb_load(ifile, vars=vars,
@@ -114,12 +116,22 @@ class gdio(object):
                                   filter_by=filter_by,
                                   rename_vars=rename_vars,
                                   sort_before=sort_before)
-            else:
+
+            elif nc.is_netcdf(ifile):
                 return nc.nc_load(ifile, vars=vars,
                                   cut_time=cut_time,
                                   cut_domain=cut_domain,
                                   rename_vars=rename_vars,
                                   level_type=level_type)
+
+            elif hd.is_hdf(ifile):
+                return hd.hdf_load(ifile, vars=vars,
+                                   cut_time=cut_time,
+                                   cut_domain=cut_domain,
+                                   rename_vars=rename_vars,
+                                   level_type=level_type)
+            else:
+                logging.warning('''[PID:{0}] io.thread > unrecognized format: {1}'''.format(os.getpid(), ifile))
 
         else:
             logging.warning('''[PID:{0}] io.thread > missing file: {1}'''.format(os.getpid(), ifile))
@@ -207,9 +219,12 @@ class gdio(object):
                     # convert to day unity
                     t_units = _dat.get('time_units').lower()
 
-                    if t_units in ['minute', 'minutes']:
-                        t_units = 1/60
-                    if t_units in ['hour', 'hours', 'hrs']:
+                    # continue
+                    if t_units in ['second', 'seconds']:
+                        t_units = 1 / 3600
+                    elif t_units in ['minute', 'minutes']:
+                        t_units = 1 / 60
+                    elif t_units in ['hour', 'hours', 'hrs']:
                         t_units = 1
                     elif t_units in ['day', 'days']:
                         t_units = 24
@@ -217,7 +232,6 @@ class gdio(object):
                         t_units = 24 * 30
                     elif t_units in ['year', 'years']:
                         t_units = 24 * 24 * 365
-
 
                     if (vars is None or key in vars) \
                             and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:
@@ -325,14 +339,18 @@ class gdio(object):
                                                                       np.ones((1, ntimes) + data[key][typLev].value.shape[2:]) * np.nan),
                                                                      axis=1)
                     elif key in self.__fields_time:
-                        dt = int((data[key][-1] - data[key][-2]).seconds / 3600)
+                        try:
+                            dt = (data[key][-1] - data[key][-2]).total_seconds() / 3600
+                            dt = dt if dt > 0 else t_units
+                        except:
+                            dt = t_units
 
                         data[key] = np.concatenate(
-                            (data[key], data[key][-1] + timestep_to_datetime(range(dt, (ntimes+1)*dt, dt)))
+                            (data[key], data[key][-1] + timestep_to_datetime(np.arange(dt, (ntimes + 1) * dt, dt)))
                         )
 
-                logging.warning('''io.load_nc > missing file applying null grid''')
 
+                logging.warning('''io.load_nc > missing file applying null grid''')
 
         self.coordinates.append('latitude')
         self.coordinates.append('longitude')
@@ -511,7 +529,6 @@ class gdio(object):
         '''
 
         _lon_new, _lat_new = np.meshgrid(lon_new, lat_new)
-
         cpu_num = multiprocessing.cpu_count()
 
         n_processes = cpu_num if self.remap_n_processes > cpu_num else self.remap_n_processes

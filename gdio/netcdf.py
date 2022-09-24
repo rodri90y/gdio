@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Jul"
+__date__ = "2022.Set"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.1"
+__version__ = "version 0.3.2"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -114,6 +114,7 @@ class netcdf(object):
         data = objectify()
 
         try:
+
             _nc = Dataset(ifile, mode='r')
 
             self.history = _nc.history if 'history' in _nc.__dict__ else None
@@ -126,6 +127,7 @@ class netcdf(object):
             self.levels['surface'] = [0]
 
             for key in _nc.variables.keys():
+
                 if key in self.__fields_time:
                     self.coordinates.append('time')
                     self.time_units = _nc.variables[key].units
@@ -488,3 +490,25 @@ class netcdf(object):
             return result[0][0], datetime(*[int(item) for item in result[0][1:]])
         else:
             return None, None
+
+    @staticmethod
+    def is_netcdf(ifile):
+        '''
+        Check if is hdf file
+        from Rodrigo@Set.2022
+        :rtype: bool
+        :return:
+        '''
+
+        if isinstance(ifile, str):
+            try:
+                _nc = Dataset(ifile, mode='r')
+
+                if _nc.disk_format in ['NETCDF3', 'NETCDF4', 'HDF5', 'PNETCDF'] and \
+                        bool(_nc.variables.keys()):
+                    return True
+
+            except:
+                return False
+
+        return False
