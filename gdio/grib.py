@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Jul"
+__date__ = "2022.Set"
 __credits__ = ["Rodrigo Yamamoto", "Igor Santos"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.1"
+__version__ = "version 0.3.2"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"

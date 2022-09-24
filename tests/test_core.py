@@ -19,7 +19,9 @@ class TestNcFiles(unittest.TestCase):
         self.ds.mload(
             [
                 f'{base_path}/data/era5_20191226-27_lev.grib',
-                f'{base_path}/data/era5_20191227_lev.nc'
+                f'{base_path}/data/era5_20191227_lev.nc',
+                f'{base_path}/data/era5_2019122712_lev.hdf',
+                f'{base_path}/data/missing.nc',
             ],
             merge_files=True,
             uniformize_grid=True,
@@ -30,10 +32,12 @@ class TestNcFiles(unittest.TestCase):
         )
 
     def setUp(self):
-        self.expected_dim = (1, 4, 7, 160, 80)
+        self.expected_dim = (1, 6, 7, 160, 80)
         self.expected_ref_time = datetime(2019, 12, 26, 0, 0)
         self.expected_times = [datetime(2019, 12, 26, 12, 0), datetime(2019, 12, 27, 0, 0),
-                               datetime(2019, 12, 27, 12, 0), datetime(2019, 12, 27, 12, 0)]
+                               datetime(2019, 12, 27, 12, 0), datetime(2019, 12, 27, 12, 0),
+                               datetime(2019, 12, 28, 12, 0), datetime(2019, 12, 29, 12, 0)]
+        self.missing_time = [datetime(2019, 12, 29, 12, 0)]
         self.expected_coordinate = ([26], [53])
         self.expected_levels = [200, 300, 500, 700, 800, 950, 1000]
         self.expected_level_type = ['isobaricInhPa']
@@ -75,6 +79,10 @@ class TestNcFiles(unittest.TestCase):
 
     def test_cut_time(self):
         self.assertListEqual(list(self.ds.dataset[0].get('time')), self.expected_times,
+                             'incorrect time cut')
+
+    def test_missing_time(self):
+        self.assertTrue(self.missing_time in self.ds.dataset[0].get('time'),
                              'incorrect time cut')
 
     def test_interpolation(self):
