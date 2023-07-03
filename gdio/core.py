@@ -97,7 +97,7 @@ class gdio(object):
 
         if os.path.isfile(ifile):
 
-            logging.info('''[PID:{0}] io.thread > opening file: {1}'''.format(os.getpid(), ifile))
+            logging.info('''[PID:{0} ] io.thread > opening file: {1}'''.format(os.getpid(), ifile))
 
             _data = None
 

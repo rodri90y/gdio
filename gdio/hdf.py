@@ -210,7 +210,7 @@ class hdf(object):
                     try:
                         if x[0] > x[1]:
                             cut_domain_roll = -x[0]
-                            self.lon = np.roll(self.lon, cut_domain_roll, axis=0)
+                            self.lon = np.roll(self.lon, cut_domain_roll, axis=1)
                         else:
                             break
                     except BaseException:
