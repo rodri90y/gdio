@@ -3,7 +3,10 @@ package:
   version: 0.3.3
 
 source:
-  git_url: https://github.com/rodri90y/gdio.git
+  path: ../gdio
+
+build:
+    preserve_egg_dir: True
 
 requirements:
   build:
