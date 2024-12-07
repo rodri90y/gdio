@@ -456,7 +456,7 @@ dict_keys(['ref_time', 'time_units', 'time', 't', '10u', 'v', 'r'])
 
 From the loaded dataset
 ```
-nc.nc_write('data/output.nc', ds)
+hd.hdf_write('data/output.h5', ds)
 ```
 From a dictionary
 ```
@@ -464,7 +464,7 @@ from datetime import datetime
 import numpy as np
 from gdio.hdf import hdf
 
-nc = hdf(verbose=False)
+hd = hdf(verbose=False)
 
 ds = {'ref_time': datetime(2019, 12, 27, 0, 0), 
       'time_units': 'hours', 
@@ -494,12 +494,12 @@ ds = {'ref_time': datetime(2019, 12, 27, 0, 0),
             }
       }
 
-nc.hdf_write('data/output.nc', ds)
+hd.hdf_write('data/output.h5', ds)
 ```
 
 ## Routines
 ### gdio.mload
-Load multiple files (netcdf/grib) returning the data as a list of dictionary type interpolating the data to a same grid
+Load multiple files (netcdf/hdf5/grib) returning the data as a list of dictionary type interpolating the data to a same grid
 
 ```
 mload(files, vars=None, merge_files=True, cut_time=None,

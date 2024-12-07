@@ -1,3 +1,4 @@
+import copy
 import difflib
 import os
 import numpy as np
@@ -16,6 +17,7 @@ class objectify(dict):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         for key, value in self.items():
             if not isinstance(value, (dict, list, tuple, set)):
                 continue
@@ -62,6 +64,13 @@ class objectify(dict):
 
     def copy(self):
         return self.__class__(super().copy())
+
+    #sort following the order of the key list
+    def sort(self, keys):
+        __data = self.copy()
+        for key in reversed(keys):
+            __data = {key: __data.pop(key), **__data}
+        return __data
 
     def update(self, *args, **kwargs):
         other = self.__class__(*args, **kwargs)

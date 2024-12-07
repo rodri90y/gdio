@@ -79,7 +79,6 @@ class TestNcFiles(unittest.TestCase):
                                        decimal=3)
 
     def test_write_coord(self):
-
         np.testing.assert_almost_equal(self.nc.get('u').latitude,
                                        self.new_nc.get('u').latitude,
                                        decimal=3)

@@ -407,6 +407,7 @@ class grib(object):
                 timestep = data.ref_time if data_type in ['fc'] else timestep
 
                 # convert lat lon to 2d mesh coordinates
+                #TODO: reformular para nao gravar lat/lon como matriz e sim como parametros
                 if data[idVar].latitude.ndim == 1 and data[idVar].longitude.ndim == 1:
                     dims = (data[idVar].longitude.size, data[idVar].latitude.size)
 
@@ -439,7 +440,7 @@ class grib(object):
 
                         # projection namespace
                         'gridType': data[idVar].grid_type,
-                        'latitude': data[idVar].latitude,
+                        'latitude': data[idVar].latitude,       #esta gravando 2d em cada mensagem,
                         'longitude': data[idVar].longitude
                         }
 
