@@ -21,7 +21,7 @@ class TestNcFiles(unittest.TestCase):
                              rename_vars={'t': 't2m'})
 
         # write new nc
-        nc.nc_write(os.path.join(root, 'tmp.nc'), self.nc)
+        nc.nc_write(os.path.join(root, 'tmp.nc'), self.nc, global_atrib={'source': 'ecmwf/era5'})
 
         # open new nc
         self.new_nc = nc.nc_load(os.path.join(root, 'tmp.nc'))

@@ -27,7 +27,7 @@ class TestNcFiles(unittest.TestCase):
         # open new hdf
         self.new_hd = hd.hdf_load(os.path.join(root, 'tmp.hdf'))
 
-        # os.remove(os.path.join(root, 'tmp.hdf'))
+        os.remove(os.path.join(root, 'tmp.hdf'))
 
 
     def setUp(self):

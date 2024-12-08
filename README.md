@@ -704,6 +704,11 @@ specify the power of ten of the smallest decimal place in the data that is a
                 reliable value that dramatically improve zlib compression by quantizing
                 (or truncating) the data (default None)
 
+**force_reg_grid:   bool**\
+disable automatic detection of non-regular grid projection
+
+**global_atrib:      dict**\
+add into global metadata key:value
 
 ### gdio.hdf.hdf_load
 Load HDF5 files
@@ -758,6 +763,11 @@ specify the power of ten of the smallest decimal place in the data that is a
                 reliable value that dramatically improve zlib compression by quantizing
                 (or truncating) the data (default None)
 
+**force_reg_grid:   bool**\
+disable automatic detection of non-regular grid projection
+
+**global_atrib:      dict**\
+add into global metadata key:value
 
 ### gdio.remapbil
 ```

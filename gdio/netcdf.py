@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Set"
+__date__ = "2024.Dez"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.2"
+__version__ = "version 0.3.4"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -114,171 +114,171 @@ class netcdf(object):
 
         data = objectify()
 
-        # try:
+        try:
 
-        _nc = Dataset(ifile, mode='r')
+            _nc = Dataset(ifile, mode='r')
 
-        self.history = _nc.history if 'history' in _nc.__dict__ else None
+            self.history = _nc.history if 'history' in _nc.__dict__ else None
 
-        start, stop = None, None
-        flip_lat = False
-        cut_domain_roll = 0
+            start, stop = None, None
+            flip_lat = False
+            cut_domain_roll = 0
 
-        # set coordinates .......................
-        self.levels['surface'] = [0]
+            # set coordinates .......................
+            self.levels['surface'] = [0]
 
-        for key in _nc.variables.keys():
+            for key in _nc.variables.keys():
 
-            if key in self.__fields_time:
-                self.coordinates.append('time')
-                self.time_units = _nc.variables[key].units
-                self.time = _nc.variables[key][:].astype(int)
+                if key in self.__fields_time:
+                    self.coordinates.append('time')
+                    self.time_units = _nc.variables[key].units
+                    self.time = _nc.variables[key][:].astype(int)
 
-            elif key in self.__fields_longitude:
-                self.coordinates.append('longitude')
-                # convert from -180,180 to 360 format
-                self.lon = (_nc.variables[key][:] + 360) % 360
+                elif key in self.__fields_longitude:
+                    self.coordinates.append('longitude')
+                    # convert from -180,180 to 360 format
+                    self.lon = (_nc.variables[key][:] + 360) % 360
 
-            elif key in self.__fields_latitude:
-                self.coordinates.append('latitude')
-                self.lat = _nc.variables[key][:]
-                flip_lat = self.lat[-1] < self.lat[0]
-                flip_lat = flip_lat if isinstance(flip_lat, np.bool) else all(flip_lat)
+                elif key in self.__fields_latitude:
+                    self.coordinates.append('latitude')
+                    self.lat = _nc.variables[key][:]
+                    flip_lat = self.lat[-1] < self.lat[0]
+                    flip_lat = flip_lat if isinstance(flip_lat, np.bool) else all(flip_lat)
 
-                if flip_lat:
-                    self.lat = np.flip(self.lat, axis=0)
+                    if flip_lat:
+                        self.lat = np.flip(self.lat, axis=0)
 
-            elif key.lower() in sum(self.__fields_level.values(), []):
-                typeLev = [k for k, v in self.__fields_level.items() if key in v][0]
-                self.levels['surface'] = [0]
-                self.levels[typeLev] = list(_nc.variables[key][:].astype(int))
+                elif key.lower() in sum(self.__fields_level.values(), []):
+                    typeLev = [k for k, v in self.__fields_level.items() if key in v][0]
+                    self.levels['surface'] = [0]
+                    self.levels[typeLev] = list(_nc.variables[key][:].astype(int))
 
-        # cut time ..............................
-        if cut_time is not None and self.time is not None:
+            # cut time ..............................
+            if cut_time is not None and self.time is not None:
 
-            if isinstance(cut_time, tuple):
-                start, stop = cut_time
-                start = 0 if start is None else start
-                stop = len(self.time) if stop is None else stop
+                if isinstance(cut_time, tuple):
+                    start, stop = cut_time
+                    start = 0 if start is None else start
+                    stop = len(self.time) if stop is None else stop
 
-                stop += 1  # one Kadan, to honor the Hebrew God
+                    stop += 1  # one Kadan, to honor the Hebrew God
 
-        # convert lat lon to 2d mesh coordinates
-        if self.lat.ndim == 1 and self.lon.ndim == 1:
-            dims = (self.lon.size, self.lat.size)
-            self.lat = np.tile(self.lat, (dims[0], 1)).T
-            self.lon = np.tile(self.lon, (dims[1], 1))
+            # convert lat lon to 2d mesh coordinates
+            if self.lat.ndim == 1 and self.lon.ndim == 1:
+                dims = (self.lon.size, self.lat.size)
+                self.lat = np.tile(self.lat, (dims[0], 1)).T
+                self.lon = np.tile(self.lon, (dims[1], 1))
 
-        # select spatial subdomain ............
-        y, x = [None, None], [None, None]
+            # select spatial subdomain ............
+            y, x = [None, None], [None, None]
 
-        if cut_domain:
-            if isinstance(cut_domain, tuple) and \
-                    not self.lat is None and not self.lon is None:
+            if cut_domain:
+                if isinstance(cut_domain, tuple) and \
+                        not self.lat is None and not self.lon is None:
 
-                lat1, lon1, lat2, lon2 = cut_domain
+                    lat1, lon1, lat2, lon2 = cut_domain
 
-                while True:
-                    y, x = near_yx2({'latitude': self.lat, 'longitude': self.lon},
-                                   lats=[lat1, lat2], lons=[lon1, lon2])
+                    while True:
+                        y, x = near_yx2({'latitude': self.lat, 'longitude': self.lon},
+                                       lats=[lat1, lat2], lons=[lon1, lon2])
 
-                    # if x0>x1 the longitude is rolled of x0 elements
-                    # in order to avoid discontinuity 360-0 of the longitude
-                    try:
-                        if x[0] > x[1]:
-                            cut_domain_roll = -x[0]
-                            self.lon = np.roll(self.lon, cut_domain_roll, axis=1)
-                        else:
-                            break
-                    except BaseException:
-                        break
-
-
-        # trim lat/lon dimensions
-        self.lat = self.lat[y[0]:y[1], x[0]:x[1]]
-        self.lon = self.lon[y[0]:y[1], x[0]:x[1]]
-
-        unity, ref_time = self.get_ref_time(self.time_units)
-        data.update({'ref_time': ref_time, 'time_units': unity})
-
-        # select variables ......................
-        for key, val in _nc.variables.items():
-
-            _data = objectify()
-
-            if not (key in self.__fields_latitude
-                    or key.lower() in sum(self.__fields_level.values(), [])
-                    or key in self.__fields_longitude
-                    or key in self.__fields_index
-                    or key in self.__fields_time):
-
-                if vars is None or key in vars:
-
-                    if np.ma.isMaskedArray(_nc.variables[key][:]):
-                        if not 'float' in val[:].data.dtype.name:
-                            _data = val[:].data
-                        else:
-                            _data = val[:].filled(np.nan)
-                    else:
-                        _data = val[:]
-
-                    # rename variables
-                    for k, v in rename_vars.items():
-                        if key in k:
-                            key = v
-
-                    # if necessary roll longitude due discontinuity 360-0 of the longitude
-                    _data = np.roll(_data, cut_domain_roll, axis=-1)
-
-                    typLev = self.__gettypLev(val)
-
-                    if (level_type is None or typLev in level_type):
-
-                        # redim the data array ...........
-                        if _data.ndim == 2:
-                            _data = _data[None, None, None, :, :]
-                        elif _data.ndim == 3:
-                            if 'time' in val.dimensions:
-                                _data = _data[None, :, None, :, :]
+                        # if x0>x1 the longitude is rolled of x0 elements
+                        # in order to avoid discontinuity 360-0 of the longitude
+                        try:
+                            if x[0] > x[1]:
+                                cut_domain_roll = -x[0]
+                                self.lon = np.roll(self.lon, cut_domain_roll, axis=1)
                             else:
-                                _data = _data[None, None, :, :, :]
-                        elif _data.ndim == 4:
-                            _data = _data[None, :, :, :, :]
+                                break
+                        except BaseException:
+                            break
 
-                        # flip latitude axis of the data
-                        if flip_lat:
-                            _data = np.flip(_data, axis=3)
 
-                        # resize the data array and consolidate ...........
-                        __tmp = {
-                            typLev: {
-                                'value': _data[:, start:stop, :, y[0]:y[1], x[0]:x[1]],
-                                'level': self.levels[typLev],
-                                'members': list(range(0, _data.shape[0]))
-                            },
-                            'param_id': None,
-                            'long_name': self.get_attr(val, 'long_name'),
-                            'parameter_units': self.get_attr(val, 'units'),
-                            'latitude': self.lat,
-                            'longitude': self.lon
-                        }
+            # trim lat/lon dimensions
+            self.lat = self.lat[y[0]:y[1], x[0]:x[1]]
+            self.lon = self.lon[y[0]:y[1], x[0]:x[1]]
 
-                        if key in data.keys():
-                            data[key].update(__tmp)
-                            data[key].level_type.append(typLev)
+            unity, ref_time = self.get_ref_time(self.time_units)
+            data.update({'ref_time': ref_time, 'time_units': unity})
+
+            # select variables ......................
+            for key, val in _nc.variables.items():
+
+                _data = objectify()
+
+                if not (key in self.__fields_latitude
+                        or key.lower() in sum(self.__fields_level.values(), [])
+                        or key in self.__fields_longitude
+                        or key in self.__fields_index
+                        or key in self.__fields_time):
+
+                    if vars is None or key in vars:
+
+                        if np.ma.isMaskedArray(_nc.variables[key][:]):
+                            if not 'float' in val[:].data.dtype.name:
+                                _data = val[:].data
+                            else:
+                                _data = val[:].filled(np.nan)
                         else:
-                            data[key] = __tmp
-                            data[key].level_type = [typLev]
-                            self.variables.append(key)
+                            _data = val[:]
+
+                        # rename variables
+                        for k, v in rename_vars.items():
+                            if key in k:
+                                key = v
+
+                        # if necessary roll longitude due discontinuity 360-0 of the longitude
+                        _data = np.roll(_data, cut_domain_roll, axis=-1)
+
+                        typLev = self.__gettypLev(val)
+
+                        if (level_type is None or typLev in level_type):
+
+                            # redim the data array ...........
+                            if _data.ndim == 2:
+                                _data = _data[None, None, None, :, :]
+                            elif _data.ndim == 3:
+                                if 'time' in val.dimensions:
+                                    _data = _data[None, :, None, :, :]
+                                else:
+                                    _data = _data[None, None, :, :, :]
+                            elif _data.ndim == 4:
+                                _data = _data[None, :, :, :, :]
+
+                            # flip latitude axis of the data
+                            if flip_lat:
+                                _data = np.flip(_data, axis=3)
+
+                            # resize the data array and consolidate ...........
+                            __tmp = {
+                                typLev: {
+                                    'value': _data[:, start:stop, :, y[0]:y[1], x[0]:x[1]],
+                                    'level': self.levels[typLev],
+                                    'members': list(range(0, _data.shape[0]))
+                                },
+                                'param_id': None,
+                                'long_name': self.get_attr(val, 'long_name'),
+                                'parameter_units': self.get_attr(val, 'units'),
+                                'latitude': self.lat,
+                                'longitude': self.lon
+                            }
+
+                            if key in data.keys():
+                                data[key].update(__tmp)
+                                data[key].level_type.append(typLev)
+                            else:
+                                data[key] = __tmp
+                                data[key].level_type = [typLev]
+                                self.variables.append(key)
 
 
-            elif key in self.__fields_time:
-                data.update({key: self.time[start:stop]})
+                elif key in self.__fields_time:
+                    data.update({key: self.time[start:stop]})
 
-        _nc.close()
+            _nc.close()
 
-        # except Exception as e:
-        #     logging.error('''gdio.nc_load > {0}'''.format(e))
+        except Exception as e:
+            logging.error('''gdio.nc_load > {0}'''.format(e))
 
         return data
 
@@ -308,7 +308,9 @@ class netcdf(object):
                  zlib=True,
                  netcdf_format='NETCDF4',
                  complevel=4,
-                 least_significant_digit=None
+                 least_significant_digit=None,
+                 force_reg_grid=False,
+                 global_atrib={}
                  ):
         '''
         Write netcdf file
@@ -329,20 +331,29 @@ class netcdf(object):
                                         specify the power of ten of the smallest decimal place in the data that is a
                                         reliable value that dramatically improve zlib compression by quantizing
                                         (or truncating) the data
+        :param force_reg_grid:    bool (default False)
+                                  disable automatic detection of non-regular grid projection
+        :param global_atrib:      dict
+                                  add global metadata
         :return:
         '''
 
         _nc = Dataset(ifile, mode='w', format=netcdf_format)
 
         # settings
+        _nc.date_created = '{date:%Y%m%d%H}'.format(date=datetime.now())
+        _nc.version = f'gdio v{__version__}'
+
+        for k, v in global_atrib.items():
+            _nc.setncattr(k,v)
+
         if self.history:
-            _nc.history = self.history + chr(10)
-            _nc.history += '    Created by gdio @ {date:%Y%m%d%H}'.format(date=datetime.now()) + chr(10)
-        else:
-            _nc.history = '    Created by gdio @ {date:%Y%m%d%H}'.format(date=datetime.now()) + chr(10)
+            _nc.history = self.history
 
         data = data if isinstance(data, objectify) else objectify(data)
         dims = list()
+
+        data = data.sort(["ref_time", "time"])  # sort dictionary keys to keep the time at first position
 
         for key, val in data.items():
 
@@ -360,7 +371,6 @@ class netcdf(object):
 
                 time[:] = val
                 dims.append(key)
-                #TODO como escrever ref_time propriamente em HDF
             else:
 
                 if isinstance(val, dict):
@@ -391,8 +401,12 @@ class netcdf(object):
                         d2lon = np.diff(val.longitude, n=2, axis=1)
 
                         # nonregular indexing dimension
+                        if self.verbose:
+                            logging.debug('''nonregular grid projection''')
+
                         # add longitude dimension
-                        if not (np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all()):
+                        if not (np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all()) \
+                                and not force_reg_grid:
 
                             if not 'x' in _nc.dimensions:
                                 _nc.createDimension('x', val.longitude.shape[1])
@@ -407,7 +421,8 @@ class netcdf(object):
                                 dims.append('x')
 
                         # add latitude dimension
-                        if not (np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all()):
+                        if not (np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all()) \
+                                and not force_reg_grid:
 
                             if not 'y' in _nc.dimensions:
                                 _nc.createDimension('y', val.latitude.shape[0])
@@ -470,7 +485,6 @@ class netcdf(object):
                                 lon.units = 'degrees_east'
                                 lon.grads_dim = 'x'
                                 lon[:] = _longitude
-
 
                         # add variables
                         if 'value' in val[typLev].keys():

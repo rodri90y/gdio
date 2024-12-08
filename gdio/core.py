@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Set"
+__date__ = "2024.Set"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.2"
+__version__ = "version 0.3.4"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -11,7 +11,7 @@ __description__ = "A simple and concise gridded data IO library for read multipl
 import copy
 import logging
 import multiprocessing
-import os
+import os, sys
 import warnings
 from datetime import datetime, timedelta
 from functools import partial
@@ -135,7 +135,8 @@ class gdio(object):
 
         else:
             logging.warning('''[PID:{0}] io.thread > missing file: {1}'''.format(os.getpid(), ifile))
-            return None
+
+
 
     def mload(self,
               files,
@@ -370,6 +371,9 @@ class gdio(object):
         else:
             return data
 
+        pool.terminate()
+
+
 
 
     def sel(self,
@@ -536,12 +540,15 @@ class gdio(object):
         pool = multiprocessing.Pool(processes=n_processes)
 
         # here we parallelise in each step of time, a kind of magic
-        return np.array(pool.map(
+        _data = np.array(pool.map(
             partial(self.interp, xin=lon[np.argsort(lon)],
                     yin=lat[np.argsort(lat)], xout=_lon_new, yout=_lat_new,
                     order=order, masked=masked),
             data)
         )
+        pool.close()
+
+        return _data
 
     def interp(self, datain, xin, yin, xout, yout, checkbounds=False, masked=False, order=1):
         """

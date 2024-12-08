@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Set"
+__date__ = "2024.Dez"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.0.1"
+__version__ = "version 0.0.2"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -318,7 +318,9 @@ class hdf(object):
                  data,
                  compress_type='gzip',
                  complevel=9,
-                 least_significant_digit=None
+                 least_significant_digit=None,
+                 force_reg_grid=False,
+                 global_atrib={}
                  ):
         '''
         Write HDF file
@@ -336,6 +338,10 @@ class hdf(object):
                                         specify the power of ten of the smallest decimal place in the data that is a
                                         reliable value that dramatically improve the compression quantizing
                                         (or truncating) the data
+        :param force_reg_grid:    bool (default False)
+                                  disable automatic detection of non-regular grid projection
+        :param global_atrib:      dict
+                                  add global metadata
         :return:
         '''
 
@@ -344,15 +350,19 @@ class hdf(object):
         _hf = h5py.File(ifile, mode='w')
 
         # settings
+        _hf.attrs['date_created'] = '{date:%Y%m%d%H}'.format(date=datetime.now())
+        _hf.attrs['version'] = f'gdio v{__version__}'
+
+        for k, v in global_atrib.items():
+            _hf.attrs[k] = v
+
         if self.history:
             _hf.attrs['history'] = self.history
-        else:
-            _hf.attrs['history'] = 'Created by gdio @ {date:%Y%m%d%H}'.format(date=datetime.now())
 
         data = data if isinstance(data, objectify) else objectify(data)
         dims = list()
 
-        data.sort(["ref_time","time"])  #coloca nas primeiras posicoe por conveniencia
+        data = data.sort(["ref_time","time"])  #sort dictionary keys to keep the time at first position
 
         for key, val in data.items():
 
@@ -368,7 +378,7 @@ class hdf(object):
                 time.make_scale()
                 time[:] = val
                 dims.append(key)
-
+                #TODO como escrever ref_time propriamente em HDF para ler no ncview
             else:
 
                 if isinstance(val, dict):
@@ -400,7 +410,8 @@ class hdf(object):
 
                         # nonregular indexing dimension
                         # add latitude dimension
-                        if not (np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all()):
+                        if not (np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all())\
+                            and not force_reg_grid:
 
                             if not 'y' in _hf.keys():
 
@@ -417,7 +428,8 @@ class hdf(object):
                                 dims.append('y')
 
                         # add longitude dimension
-                        if not (np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all()):
+                        if not (np.isclose(d2lon, 0.0).all() and np.isclose(d2lat, 0.0).all())\
+                            and not force_reg_grid:
 
                             if not 'x' in _hf.keys():
                                 xi = _hf.create_dataset('x', data=range(val.latitude.shape[1]),
