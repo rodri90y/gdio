@@ -143,7 +143,7 @@ class netcdf(object):
                     self.coordinates.append('latitude')
                     self.lat = _nc.variables[key][:]
                     flip_lat = self.lat[-1] < self.lat[0]
-                    flip_lat = flip_lat if isinstance(flip_lat, np.bool) else all(flip_lat)
+                    flip_lat = flip_lat if isinstance(flip_lat, np.bool_) else all(flip_lat)
 
                     if flip_lat:
                         self.lat = np.flip(self.lat, axis=0)
