@@ -1,6 +1,6 @@
 package:
   name: gdio
-  version: 0.3.4
+  version: 0.3.5
 
 source:
   path: ../gdio
@@ -10,7 +10,7 @@ build:
 
 requirements:
   build:
-    - python
+    - python>=3.9.0
     - eccodes>=2.25.0
     - netCDF4>=1.5.8
     - h5py>=3.6.0
@@ -18,7 +18,7 @@ requirements:
     - python-eccodes
 
   run:
-    - python
+    - python=3.9.0
     - eccodes>=2.25.0
     - netCDF4>=1.5.8
     - h5py>=3.6.0

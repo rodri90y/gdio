@@ -439,7 +439,7 @@ class netcdf(object):
                         # add latitude dimension
                         if any(k in val.keys() for k in self.__fields_latitude):
 
-                            if not 'latitude' in _nc.dimensions:
+                            if not ('latitude' in _nc.dimensions or 'latitude' in _nc.variables):
 
                                 _latitude = val.latitude
 
@@ -463,7 +463,7 @@ class netcdf(object):
 
                         # add longitude dimension
                         if any(k in val.keys() for k in self.__fields_longitude):
-                            if not 'longitude' in _nc.dimensions:
+                            if not ('longitude' in _nc.dimensions or 'longitude' in _nc.variables):
 
                                 _longitude = ((val.longitude - 180) % 360) - 180
 
