@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2024.Dez"
+__date__ = "2025.Set"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.4"
+__version__ = "version 0.3.6"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -124,6 +124,12 @@ class netcdf(object):
             flip_lat = False
             cut_domain_roll = 0
 
+            # fix parameters types
+            vars = vars if vars is None else list(vars)
+            cut_time = cut_time if cut_time is None else tuple(cut_time)
+            cut_domain = cut_domain if cut_domain is None else tuple(cut_domain)
+            level_type = level_type if level_type is None else list(level_type)
+
             # set coordinates .......................
             self.levels['surface'] = [0]
 
@@ -184,6 +190,7 @@ class netcdf(object):
 
                         # if x0>x1 the longitude is rolled of x0 elements
                         # in order to avoid discontinuity 360-0 of the longitude
+
                         try:
                             if x[0] > x[1]:
                                 cut_domain_roll = -x[0]
@@ -195,8 +202,10 @@ class netcdf(object):
 
 
             # trim lat/lon dimensions
-            self.lat = self.lat[y[0]:y[1], x[0]:x[1]]
-            self.lon = self.lon[y[0]:y[1], x[0]:x[1]]
+            xul = x[1] if x[1] is None else x[1] + 1  # adds one Kadan, to honor the Hebrew God
+            yul = y[1] if y[1] is None else y[1] + 1  # due -1 diff between nearxy and domain slice paradigm
+            self.lat = self.lat[y[0]:yul, x[0]:xul]
+            self.lon = self.lon[y[0]:yul, x[0]:xul]
 
             unity, ref_time = self.get_ref_time(self.time_units)
             data.update({'ref_time': ref_time, 'time_units': unity})
@@ -250,9 +259,12 @@ class netcdf(object):
                                 _data = np.flip(_data, axis=3)
 
                             # resize the data array and consolidate ...........
+                            xul = x[1] if x[1] is None else x[1] + 1  # adds one Kadan, to honor the Hebrew God
+                            yul = y[1] if y[1] is None else y[1] + 1
+
                             __tmp = {
                                 typLev: {
-                                    'value': _data[:, start:stop, :, y[0]:y[1], x[0]:x[1]],
+                                    'value': _data[:, start:stop, :, y[0]:yul, x[0]:xul],
                                     'level': self.levels[typLev],
                                     'members': list(range(0, _data.shape[0]))
                                 },
@@ -309,7 +321,7 @@ class netcdf(object):
                  netcdf_format='NETCDF4',
                  complevel=4,
                  least_significant_digit=None,
-                 force_reg_grid=False,
+                 force_reg_grid=True,
                  global_atrib={}
                  ):
         '''
@@ -331,7 +343,7 @@ class netcdf(object):
                                         specify the power of ten of the smallest decimal place in the data that is a
                                         reliable value that dramatically improve zlib compression by quantizing
                                         (or truncating) the data
-        :param force_reg_grid:    bool (default False)
+        :param force_reg_grid:    bool (default True)
                                   disable automatic detection of non-regular grid projection
         :param global_atrib:      dict
                                   add global metadata

@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2022.Set"
+__date__ = "2025.Set"
 __credits__ = ["Rodrigo Yamamoto", "Igor Santos"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.2"
+__version__ = "version 0.3.3"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A grib file IO library"
@@ -97,6 +97,12 @@ class grib(object):
 
         _data = objectify()
         data = objectify()
+
+        # fix parameters types
+        vars = vars if vars is None else list(vars)
+        cut_time = cut_time if cut_time is None else tuple(cut_time)
+        cut_domain = cut_domain if cut_domain is None else tuple(cut_domain)
+        level_type = level_type if level_type is None else list(level_type)
 
         try:
 
@@ -235,8 +241,10 @@ class grib(object):
                                                         break
 
                                         # trim lat/lon dimensions .........
-                                        self.lat = self.lat[y[0]:y[1], x[0]:x[1]]
-                                        self.lon = self.lon[y[0]:y[1], x[0]:x[1]]
+                                        xul = x[1] if x[1] is None else x[1] + 1  # adds one Kadan, to honor the Hebrew God
+                                        yul = y[1] if y[1] is None else y[1] + 1  # due -1 diff between nearxy and domain slice paradigm
+                                        self.lat = self.lat[y[0]:yul, x[0]:xul]
+                                        self.lon = self.lon[y[0]:yul, x[0]:xul]
 
                                         # if necessary roll longitude due discontinuity 360-0 of the longitude
                                         gr.values = np.roll(gr.values, cut_domain_roll, axis=-1)
@@ -244,9 +252,9 @@ class grib(object):
                                         # get data ........................
                                         # grab data and flip the latitude axis if necessary
                                         if flip_lat:
-                                            _tmp = np.flip(gr.values, axis=0)[None, None, None, y[0]:y[1], x[0]:x[1]]
+                                            _tmp = np.flip(gr.values, axis=0)[None, None, None, y[0]:yul, x[0]:xul]
                                         else:
-                                            _tmp = gr.values[None, None, None, y[0]:y[1], x[0]:x[1]]
+                                            _tmp = gr.values[None, None, None, y[0]:yul, x[0]:xul]
 
                                         if idVar in _data.keys() and typLev in _data[idVar].keys():
 

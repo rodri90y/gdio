@@ -32,7 +32,7 @@ class TestNcFiles(unittest.TestCase):
         )
 
     def setUp(self):
-        self.expected_dim = (1, 6, 7, 160, 80)
+        self.expected_dim = (1, 6, 7, 161, 81)
         self.expected_ref_time = datetime(2019, 12, 26, 0, 0)
         self.expected_times = [datetime(2019, 12, 26, 12, 0), datetime(2019, 12, 27, 0, 0),
                                datetime(2019, 12, 27, 12, 0), datetime(2019, 12, 27, 12, 0),

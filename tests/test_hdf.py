@@ -31,7 +31,7 @@ class TestNcFiles(unittest.TestCase):
 
 
     def setUp(self):
-        self.expected_dim = (1, 1, 7, 80, 40)
+        self.expected_dim = (1, 1, 7, 81, 41)
         self.expected_times = [12]
         self.expected_level_type = ['isobaricInhPa']
         self.expected_units = 'm s**-1'

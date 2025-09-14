@@ -37,7 +37,7 @@ class TestGribFiles(unittest.TestCase):
 
     def setUp(self):
 
-        self.expected_dim = (1, 2, 7, 160, 80)
+        self.expected_dim = (1, 2, 7, 161, 81)
         self.expected_variables = sorted(['ref_time', 'time_units', 'time', 'r', '2t', 'u', 'v'])
         self.expected_level_type = ['isobaricInhPa']
         self.expected_units = 'm s**-1'

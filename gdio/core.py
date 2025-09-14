@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2024.Set"
+__date__ = "2025.Set"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.4"
+__version__ = "version 0.3.6"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -186,6 +186,11 @@ class gdio(object):
         ntimes = 1
         t_units = 1
 
+        # fix parameters types
+        vars = vars if vars is None else list(vars)
+        cut_time = cut_time if cut_time is None else tuple(cut_time)
+        cut_domain = cut_domain if cut_domain is None else tuple(cut_domain)
+        level_type = level_type if level_type is None else list(level_type)
         self.variables = list()
 
         pool = multiprocessing.Pool(processes=self.remap_n_processes)

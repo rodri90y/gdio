@@ -1,6 +1,6 @@
 package:
   name: gdio
-  version: 0.3.5
+  version: 0.3.6
 
 source:
   path: ../gdio
@@ -16,6 +16,7 @@ requirements:
     - h5py>=3.6.0
     - pyproj
     - python-eccodes
+    - scipy
 
   run:
     - python=3.9.0
@@ -24,6 +25,7 @@ requirements:
     - h5py>=3.6.0
     - pyproj
     - python-eccodes
+    - scipy
 
 about:
   home: https://github.com/rodri90y/gdio

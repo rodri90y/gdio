@@ -220,17 +220,10 @@ def near_yx2(data, lats=None, lons=None):
             else:
                 lon = None
 
-
-        xy_min = np.nanargmin((_y + _x))
-
-        #convert the 1D index to 2D index system
-        lat_index = xy_min // _lon.shape[1]
-        lon_index = xy_min - (lat_index * _lon.shape[1])
-
+        lat_index, lon_index = np.unravel_index(np.nanargmin((_y + _x)), _y.shape)
         lat_index = None if lat is None else lat_index
         lon_index = None if lon is None else lon_index
 
-        # print(lat, lon)
         x.append(lon_index)
         y.append(lat_index)
 
