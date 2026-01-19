@@ -828,7 +828,7 @@ https://github.com/rodri90y/gdio
 
 ## Contributing
 
-* 0.3.5
+* 0.3.6
     * alpha release
     
 
