@@ -1,10 +1,52 @@
-import copy
 import difflib
-import os
 import numpy as np
 import itertools
 
 from datetime import datetime, timedelta
+
+
+MINUTES_PER_HOUR = 60
+HOURS_PER_DAY = 24
+DAYS_PER_MONTH = 30
+DAYS_PER_YEAR = 365
+
+TIME_UNIT_HOURS = {
+    'second': 1 / (MINUTES_PER_HOUR * MINUTES_PER_HOUR),
+    'seconds': 1 / (MINUTES_PER_HOUR * MINUTES_PER_HOUR),
+    'minute': 1 / MINUTES_PER_HOUR,
+    'minutes': 1 / MINUTES_PER_HOUR,
+    'hour': 1,
+    'hours': 1,
+    'hrs': 1,
+    'day': HOURS_PER_DAY,
+    'days': HOURS_PER_DAY,
+    'month': HOURS_PER_DAY * DAYS_PER_MONTH,
+    'months': HOURS_PER_DAY * DAYS_PER_MONTH,
+    'year': HOURS_PER_DAY * DAYS_PER_YEAR,
+    'years': HOURS_PER_DAY * DAYS_PER_YEAR,
+}
+
+
+def time_unit_to_hours(unit):
+    """
+    Convert supported time-unit labels to their scale in hours.
+    """
+    return TIME_UNIT_HOURS.get(str(unit).lower(), unit)
+
+
+def parse_time_units(units):
+    """
+    Parse strings like "hours since 2019-12-27 00:00".
+    """
+    import re
+
+    pattern = re.compile(r"(.*?) since (?P<year>\d{4})\-(\d{1,2})\-(\d{1,2})\s+(\d{1,2})?\:*(\d{1,2})?")
+    result = re.findall(pattern, str(units))
+
+    if result:
+        return result[0][0], datetime(*[int(item) for item in result[0][1:]])
+
+    return None, None
 
 
 class objectify(dict):
@@ -296,4 +338,3 @@ def __data_tree(data, depth=0):
                                                              key=k,
                                                              value=str(v))
                      )
-

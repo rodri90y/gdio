@@ -9,13 +9,12 @@ __status__ = "development"
 __description__ = "A netcdf file IO library"
 
 import logging
-import re
 from datetime import datetime
 
 import numpy as np
 from netCDF4 import Dataset
 
-from gdio.commons import near_yx2, objectify, near_yx
+from gdio.commons import near_yx2, objectify, parse_time_units
 
 
 class netcdf(object):
@@ -90,7 +89,7 @@ class netcdf(object):
                 cut_time=None,
                 cut_domain=None,
                 level_type=None,
-                rename_vars={}):
+                rename_vars=None):
         '''
         Load netcdf files
         Rodrigo Yamamoto @ Fev.2021, Carlos Silva
@@ -113,6 +112,8 @@ class netcdf(object):
         '''
 
         data = objectify()
+        _nc = None
+        rename_vars = {} if rename_vars is None else rename_vars
 
         try:
 
@@ -287,10 +288,11 @@ class netcdf(object):
                 elif key in self.__fields_time:
                     data.update({key: self.time[start:stop]})
 
-            _nc.close()
-
         except Exception as e:
             logging.error('''gdio.nc_load > {0}'''.format(e))
+        finally:
+            if _nc is not None:
+                _nc.close()
 
         return data
 
@@ -322,7 +324,7 @@ class netcdf(object):
                  complevel=4,
                  least_significant_digit=None,
                  force_reg_grid=True,
-                 global_atrib={}
+                 global_atrib=None
                  ):
         '''
         Write netcdf file
@@ -350,6 +352,7 @@ class netcdf(object):
         :return:
         '''
 
+        global_atrib = {} if global_atrib is None else global_atrib
         _nc = Dataset(ifile, mode='w', format=netcdf_format)
 
         # settings
@@ -519,7 +522,7 @@ class netcdf(object):
                                 ncvar = _nc.createVariable(key, "f4",
                                                            sorted(dims + z_dims,
                                                                   key=lambda d: self.__fields_order.index(d)),
-                                                           zlib=True,
+                                                           zlib=zlib,
                                                            complevel=complevel,
                                                            least_significant_digit=least_significant_digit)
 
@@ -559,13 +562,7 @@ class netcdf(object):
 
         units = units if units is not None else self.time_units
 
-        padrao = re.compile("(.*?) since (?P<ano>\\d{4})\\-(\\d{1,2})\\-(\\d{1,2})\\s+(\\d{1,2})?\\:*(\\d{1,2})?")
-        result = re.findall(padrao, str(units))
-
-        if result:
-            return result[0][0], datetime(*[int(item) for item in result[0][1:]])
-        else:
-            return None, None
+        return parse_time_units(units)
 
     @staticmethod
     def is_netcdf(ifile):
@@ -577,6 +574,7 @@ class netcdf(object):
         '''
 
         if isinstance(ifile, str):
+            _nc = None
             try:
                 _nc = Dataset(ifile, mode='r')
 
@@ -586,5 +584,8 @@ class netcdf(object):
 
             except:
                 return False
+            finally:
+                if _nc is not None:
+                    _nc.close()
 
         return False

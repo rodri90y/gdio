@@ -10,11 +10,10 @@ __description__ = "A grib file IO library"
 
 import logging
 from datetime import datetime, timedelta
-import os
 import numpy as np
 
 from gdio import cgrib
-from gdio.commons import near_yx2, objectify, dict_get, timestep_to_datetime, datetime_to_timestep
+from gdio.commons import near_yx2, objectify, dict_get, timestep_to_datetime
 from .definitions.Table_4_4 import UNIT_TIME_RANGE
 
 class grib(object):
@@ -64,8 +63,8 @@ class grib(object):
                 level_type=None,
                 cut_time=None,
                 cut_domain=None,
-                filter_by={},
-                rename_vars={},
+                filter_by=None,
+                rename_vars=None,
                 sort_before=False):
         '''
         Load grib file
@@ -97,6 +96,9 @@ class grib(object):
 
         _data = objectify()
         data = objectify()
+
+        filter_by = {} if filter_by is None else filter_by
+        rename_vars = {} if rename_vars is None else rename_vars
 
         # fix parameters types
         vars = vars if vars is None else list(vars)
@@ -146,7 +148,7 @@ class grib(object):
                             if not forecastDate == self.fcstTime(gr):
                                 concat_time = True
                                 forecastDate = self.fcstTime(gr)
-                                fcst_time = int((forecastDate - ref_time).total_seconds() / (self.__unity(gr) * 3600))
+                                fcst_time = self.__forecast_step(forecastDate, ref_time, gr.stepUnits)
                                 step_time += 1
                                 member_num = 0
 
@@ -524,6 +526,9 @@ class grib(object):
             scale = 10 * 24 * 365
 
         return scale
+
+    def __forecast_step(self, forecast_date, ref_time, step_units):
+        return int((forecast_date - ref_time).total_seconds() / (self.__unity(step_units) * 3600))
 
 
     def __concat_time(self, _data, __data, fcst_time=None):

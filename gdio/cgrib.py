@@ -1,10 +1,9 @@
+import eccodes
 import numpy as np
 import pyproj
 from eccodes import *
 from .definitions.grib_namespace import *
 from .definitions.Table_4_5 import TYPE_LEVEL
-
-from datetime import datetime, timedelta
 
 class cgrib():
 
@@ -446,7 +445,7 @@ class fwrite():
             message["iScansNegatively"] = lon_scan_negatively
             message["jScansNegatively"] = lat_scan_negatively
 
-        elif self['gridType'] == 'mercator':
+        elif message['gridType'] == 'mercator':
 
             message['Ni'] = nx
             message['Nj'] = ny
@@ -471,7 +470,7 @@ class fwrite():
             message['LaD'] = lat_ts * 1000
 
 
-        elif self['gridType'] == 'lambert':
+        elif message['gridType'] == 'lambert':
 
             message['Ni'] = nx
             message['Nj'] = ny
@@ -499,7 +498,7 @@ class fwrite():
             # x, y = np.meshgrid(x, y)
             # lons, lats = pj(x, y, inverse=True)
 
-            raise ValueError('unsupported grid {0}'.format(self['gridType']))
+            raise ValueError('unsupported grid {0}'.format(message['gridType']))
         else:
             #detect the data grig projection
             pass
