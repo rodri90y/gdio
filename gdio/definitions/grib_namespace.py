@@ -39,7 +39,7 @@ DATA_TIME_KEYS = [
     "stepRange",
     "step",
     "validityDate",
-    "validityTime"
+    "validityTime",
     "unitOfTimeRange",
     "year",
     "month",

@@ -3,6 +3,7 @@ from gdio.grib import grib
 import os
 import sys
 import numpy as np
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -14,6 +15,9 @@ class TestGribFiles(unittest.TestCase):
     def setUpClass(self):
 
         root = os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addClassCleanup(self.tmpdir.cleanup)
+        tmp_grib = os.path.join(self.tmpdir.name, 'tmp.grib')
 
         gr = grib(verbose=False)
         self.gbr = gr.gb_load(os.path.join(root, 'data/era5_20191226-27_lev.grib'),
@@ -22,15 +26,13 @@ class TestGribFiles(unittest.TestCase):
                               rename_vars={'t': '2t'})
 
         # write new grib
-        gr.gb_write(os.path.join(root, 'tmp.grib'), self.gbr,
+        gr.gb_write(tmp_grib, self.gbr,
                     least_significant_digit=3,
                     packingType='grid_jpeg')
 
         # open new new grib
-        self.new_gbr = gr.gb_load(os.path.join(root, 'tmp.grib'),
-                              rename_vars={'t': '2t'})
-
-        os.remove(os.path.join(root, 'tmp.grib'))
+        self.new_gbr = gr.gb_load(tmp_grib,
+                               rename_vars={'t': '2t'})
 
 
 
@@ -47,7 +49,7 @@ class TestGribFiles(unittest.TestCase):
 
     def test_open_grib(self):
 
-        self.assertTrue(not self.gbr is {})
+        self.assertTrue(self.gbr)
 
     def test_variables(self):
         self.assertEqual(sorted(self.gbr.keys()), self.expected_variables,

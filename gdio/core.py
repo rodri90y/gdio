@@ -11,20 +11,17 @@ __description__ = "A simple and concise gridded data IO library for read multipl
 import copy
 import logging
 import multiprocessing
-import os, sys
-import warnings
-from datetime import datetime, timedelta
+import os
+from datetime import datetime
 from functools import partial
 
 import numpy as np
 import numpy.ma as ma
 
-from gdio.commons import near_yx2, objectify, show_data_structure, timestep_to_datetime
+from gdio.commons import near_yx2, objectify, show_data_structure, time_unit_to_hours, timestep_to_datetime
 from gdio.grib import grib as gblib
 from gdio.netcdf import netcdf as nclib
 from gdio.hdf import hdf as hdlib
-
-warnings.filterwarnings("ignore")
 
 
 class gdio(object):
@@ -65,8 +62,8 @@ class gdio(object):
                cut_time=None,
                cut_domain=None,
                level_type=None,
-               filter_by={},
-               rename_vars={},
+               filter_by=None,
+               rename_vars=None,
                sort_before=False):
         '''
         Load and cutting function
@@ -94,6 +91,9 @@ class gdio(object):
                                     when the grib data structure is not standard
         :return:                    dictionary
         '''
+
+        filter_by = {} if filter_by is None else filter_by
+        rename_vars = {} if rename_vars is None else rename_vars
 
         if os.path.isfile(ifile):
 
@@ -145,10 +145,10 @@ class gdio(object):
               cut_time=None,
               cut_domain=None,
               level_type=None,
-              filter_by={},
+              filter_by=None,
               uniformize_grid=True,
               sort_before=False,
-              rename_vars={},
+              rename_vars=None,
               inplace=False):
         '''
         Load multiple grib/netcdf files
@@ -181,6 +181,9 @@ class gdio(object):
         :return:                    list of dictionaries
         '''
 
+        filter_by = {} if filter_by is None else filter_by
+        rename_vars = {} if rename_vars is None else rename_vars
+
         data = objectify()
         griddes = ()
         ntimes = 1
@@ -193,20 +196,21 @@ class gdio(object):
         level_type = level_type if level_type is None else list(level_type)
         self.variables = list()
 
-        pool = multiprocessing.Pool(processes=self.remap_n_processes)
-
         if isinstance(files, str):
             files = [files]
 
-        for _dat in pool.map(
-                partial(self.thread, vars=vars,
-                        cut_time=cut_time,
-                        cut_domain=cut_domain,
-                        level_type=level_type,
-                        filter_by=filter_by,
-                        rename_vars=rename_vars,
-                        sort_before=sort_before),
-                files):
+        with multiprocessing.Pool(processes=self.remap_n_processes) as pool:
+            loaded_files = pool.map(
+                    partial(self.thread, vars=vars,
+                            cut_time=cut_time,
+                            cut_domain=cut_domain,
+                            level_type=level_type,
+                            filter_by=filter_by,
+                            rename_vars=rename_vars,
+                            sort_before=sort_before),
+                    files)
+
+        for _dat in loaded_files:
 
             if vars is not None:
                 vars = [rename_vars.get(n, n) for n in vars]
@@ -222,22 +226,7 @@ class gdio(object):
                         lons_n, lats_n = self.__get_lonlat(_dat, vars)
                         griddes = lats_n.shape
 
-                    # convert to day unity
-                    t_units = _dat.get('time_units').lower()
-
-                    # continue
-                    if t_units in ['second', 'seconds']:
-                        t_units = 1 / 3600
-                    elif t_units in ['minute', 'minutes']:
-                        t_units = 1 / 60
-                    elif t_units in ['hour', 'hours', 'hrs']:
-                        t_units = 1
-                    elif t_units in ['day', 'days']:
-                        t_units = 24
-                    elif t_units in ['month', 'months']:
-                        t_units = 24 * 30
-                    elif t_units in ['year', 'years']:
-                        t_units = 24 * 24 * 365
+                    t_units = time_unit_to_hours(_dat.get('time_units'))
 
                     if (vars is None or key in vars) \
                             and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:
@@ -338,7 +327,7 @@ class gdio(object):
                             or key in self.__fields_time
                             or key in self.__fields_level
                             or key in ['ref_time', 'time_units']):
-                        for typLev in val.level_type:
+                        for typLev in data[key].level_type:
                             # usar t_units e shape do dado ultimo arquivo
 
                             data[key][typLev].value = np.concatenate((data[key][typLev].value,
@@ -375,8 +364,6 @@ class gdio(object):
                 self.dataset.append(data)
         else:
             return data
-
-        pool.terminate()
 
 
 
@@ -542,16 +529,14 @@ class gdio(object):
 
         n_processes = cpu_num if self.remap_n_processes > cpu_num else self.remap_n_processes
 
-        pool = multiprocessing.Pool(processes=n_processes)
-
         # here we parallelise in each step of time, a kind of magic
-        _data = np.array(pool.map(
-            partial(self.interp, xin=lon[np.argsort(lon)],
-                    yin=lat[np.argsort(lat)], xout=_lon_new, yout=_lat_new,
-                    order=order, masked=masked),
-            data)
-        )
-        pool.close()
+        with multiprocessing.Pool(processes=n_processes) as pool:
+            _data = np.array(pool.map(
+                partial(self.interp, xin=lon[np.argsort(lon)],
+                        yin=lat[np.argsort(lat)], xout=_lon_new, yout=_lat_new,
+                        order=order, masked=masked),
+                data)
+            )
 
         return _data
 

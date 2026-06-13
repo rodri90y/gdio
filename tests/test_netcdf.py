@@ -3,6 +3,7 @@ from gdio.netcdf import netcdf
 import os
 import sys
 import numpy as np
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -13,6 +14,9 @@ class TestNcFiles(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         root = os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addClassCleanup(self.tmpdir.cleanup)
+        tmp_nc = os.path.join(self.tmpdir.name, 'tmp.nc')
 
         nc = netcdf()
         self.nc = nc.nc_load(os.path.join(root, 'data/era5_20191227_lev.nc'),
@@ -21,12 +25,10 @@ class TestNcFiles(unittest.TestCase):
                              rename_vars={'t': 't2m'})
 
         # write new nc
-        nc.nc_write(os.path.join(root, 'tmp.nc'), self.nc, global_atrib={'source': 'ecmwf/era5'})
+        nc.nc_write(tmp_nc, self.nc, global_atrib={'source': 'ecmwf/era5'})
 
         # open new nc
-        self.new_nc = nc.nc_load(os.path.join(root, 'tmp.nc'))
-
-        os.remove(os.path.join(root, 'tmp.nc'))
+        self.new_nc = nc.nc_load(tmp_nc)
 
 
     def setUp(self):
@@ -40,7 +42,7 @@ class TestNcFiles(unittest.TestCase):
 
 
     def test_open_netcdf(self):
-        self.assertTrue(not self.nc is {})
+        self.assertTrue(self.nc)
 
     def test_variables_test(self):
         self.assertEqual(sorted(list(self.nc.keys())), self.expected_variables,
@@ -94,7 +96,6 @@ class TestNcFiles(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
 
 
 

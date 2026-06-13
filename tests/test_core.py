@@ -47,15 +47,15 @@ class TestNcFiles(unittest.TestCase):
         self.expected_sel = (1, 1, 4, 6, 18)
 
     def test_open_multiples_files(self):
-        self.assertTrue(not self.ds.dataset is [])
+        self.assertTrue(self.ds.dataset)
 
     def test_variables_test(self):
         self.assertEqual(sorted(self.ds.dataset[0].keys()), self.expected_variables,
                          'incorrect number of variables')
 
     def test_variables_rename(self):
-        self.assertFalse(list(self.ds.dataset[0].keys()) in self.expected_variables,
-                         'variable rename fail')
+        self.assertIn('t2m', self.ds.dataset[0], 'variable rename fail')
+        self.assertNotIn('t', self.ds.dataset[0], 'old variable name was not removed')
 
     def test_varible_dimension(self):
         self.assertEqual(self.ds.dataset[0].get('u').isobaricInhPa.value.shape, self.expected_dim,
@@ -82,8 +82,8 @@ class TestNcFiles(unittest.TestCase):
                              'incorrect time cut')
 
     def test_missing_time(self):
-        self.assertTrue(self.missing_time in self.ds.dataset[0].get('time'),
-                             'incorrect time cut')
+        self.assertIn(self.missing_time[0], list(self.ds.dataset[0].get('time')),
+                              'incorrect time cut')
 
     def test_interpolation(self):
         a = self.ds.dataset[0].get('u').isobaricInhPa.value[0, 2, -1].flatten()

@@ -14,7 +14,7 @@ requirements:
   build:
     - {{ compiler('c') }}      # Necessário se houver extensões C
   host:
-    - python=3.9.0
+    - python >=3.9
     - pip
     - setuptools
     - hdf5 >=1.12              # Fixa a versão para evitar o erro de símbolo
@@ -22,7 +22,7 @@ requirements:
     - h5py >=3.6.0
     - eccodes >=2.25.0
   run:
-    - python=3.9.0
+    - python >=3.9
     - hdf5                     # Garante que a lib de sistema seja instalada
     - netcdf4 >=1.5.8
     - h5py >=3.6.0

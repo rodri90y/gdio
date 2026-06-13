@@ -3,6 +3,7 @@ from gdio.hdf import hdf
 import os
 import sys
 import numpy as np
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "")))
@@ -13,6 +14,9 @@ class TestNcFiles(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         root = os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addClassCleanup(self.tmpdir.cleanup)
+        tmp_hdf = os.path.join(self.tmpdir.name, 'tmp.hdf')
 
         hd = hdf()
         self.hd = hd.hdf_load(os.path.join(root, 'data/era5_2019122712_lev.hdf'),
@@ -22,12 +26,10 @@ class TestNcFiles(unittest.TestCase):
                              )
 
         # write new hdf
-        hd.hdf_write(os.path.join(root, 'tmp.hdf'), self.hd)
+        hd.hdf_write(tmp_hdf, self.hd)
 
         # open new hdf
-        self.new_hd = hd.hdf_load(os.path.join(root, 'tmp.hdf'))
-
-        os.remove(os.path.join(root, 'tmp.hdf'))
+        self.new_hd = hd.hdf_load(tmp_hdf)
 
 
     def setUp(self):
@@ -41,7 +43,7 @@ class TestNcFiles(unittest.TestCase):
 
 
     def test_open_hdf5(self):
-        self.assertTrue(not self.hd is {})
+        self.assertTrue(self.hd)
 
     def test_variables_test(self):
         self.assertEqual(sorted(list(self.hd.keys())), self.expected_variables,
@@ -94,4 +96,3 @@ class TestNcFiles(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
