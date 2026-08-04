@@ -17,7 +17,7 @@ conda install -c rodri90y gdio
 
 if you are using pip install, before install manually the requirements
 
-conda create -n envname --file requirements/base.txt
+conda create -n envname python=3.9 --file requirements/base.txt
 pip install gdio
 or
 pip install --index-url https://test.pypi.org/simple/ --upgrade --no-cache-dir --extra-index-url=https://pypi.org/simple/ gdio
@@ -40,7 +40,12 @@ conda config --add channels conda-forge
 
 #### Testing
 ```
-python -m unittest 
+python -m unittest discover -s tests -p "test_*.py"
+```
+
+For reproducible pip installs in the Python 3.9 container/test environment, use the constraints file:
+```
+pip install -c requirements/constraints-py39.txt -r requirements/dev.txt
 ```
 
 

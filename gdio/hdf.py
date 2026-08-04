@@ -9,13 +9,12 @@ __status__ = "development"
 __description__ = "A netcdf file IO library"
 
 import logging
-import re
 from datetime import datetime
 
 import numpy as np
 import h5py
 
-from gdio.commons import near_yx2, objectify, near_yx
+from gdio.commons import near_yx2, objectify, parse_time_units
 
 
 class hdf(object):
@@ -95,7 +94,15 @@ class hdf(object):
 
     def h5py_dataset_iterator(self, node):
 
-        for key, item in node.items():
+        for key in node.keys():
+            link = node.get(key, getlink=True)
+
+            if isinstance(link, h5py.ExternalLink):
+                logging.warning('''gdio.hdf_load > ignoring external HDF5 link: {0}'''.format(key))
+                continue
+
+            item = node.get(key)
+
             if isinstance(item, h5py.Dataset):  # test for dataset
                 yield (key, item)
             elif isinstance(item, h5py.Group):  # test for group (go down)
@@ -106,7 +113,7 @@ class hdf(object):
                 cut_time=None,
                 cut_domain=None,
                 level_type=None,
-                rename_vars={}):
+                rename_vars=None):
         '''
         Load netcdf files
         Rodrigo Yamamoto @ Set.2022
@@ -129,6 +136,8 @@ class hdf(object):
         '''
 
         data = objectify()
+        _hf = None
+        rename_vars = {} if rename_vars is None else rename_vars
 
         try:
             _hf = h5py.File(ifile, mode='r')
@@ -318,10 +327,11 @@ class hdf(object):
                 elif key in self.__fields_time:
                     data.update({key: self.time[start:stop]})
 
-            _hf.close()
-
         except Exception as e:
             logging.error('''gdio.hdf_load > {0}'''.format(e))
+        finally:
+            if _hf is not None:
+                _hf.close()
 
         return data
 
@@ -331,7 +341,7 @@ class hdf(object):
                  complevel=9,
                  least_significant_digit=None,
                  force_reg_grid=True,
-                 global_atrib={}
+                 global_atrib=None
                  ):
         '''
         Write HDF file
@@ -358,6 +368,7 @@ class hdf(object):
 
         #TODO: verificar padrão para gravar o time ref, data de referencia não aparece no ncview
 
+        global_atrib = {} if global_atrib is None else global_atrib
         _hf = h5py.File(ifile, mode='w')
 
         # settings
@@ -594,13 +605,7 @@ class hdf(object):
 
         units = units if units is not None else self.time_units
 
-        padrao = re.compile("(.*?) since (?P<ano>\\d{4})\\-(\\d{1,2})\\-(\\d{1,2})\\s+(\\d{1,2})?\\:*(\\d{1,2})?")
-        result = re.findall(padrao, str(units))
-
-        if result:
-            return result[0][0], datetime(*[int(item) for item in result[0][1:]])
-        else:
-            return None, None
+        return parse_time_units(units)
 
 
 
