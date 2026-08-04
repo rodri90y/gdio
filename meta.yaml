@@ -8,22 +8,20 @@ source:
 build:
   number: 0
   script: {{ PYTHON }} -m pip install . --no-deps -vv
-  preserve_egg_dir: True
 
 requirements:
   build:
-    - {{ compiler('c') }}      # Necessário se houver extensões C
+    - {{ compiler('c') }}
   host:
-    - python=3.9.0
+    - python
     - pip
     - setuptools
-    - hdf5 >=1.12              # Fixa a versão para evitar o erro de símbolo
-    - netcdf4 >=1.5.8
-    - h5py >=3.6.0
-    - eccodes >=2.25.0
+    - hdf5
+    - netcdf4
+    - h5py
+    - eccodes
   run:
-    - python=3.9.0
-    - hdf5                     # Garante que a lib de sistema seja instalada
+    - python
     - netcdf4 >=1.5.8
     - h5py >=3.6.0
     - eccodes >=2.25.0
