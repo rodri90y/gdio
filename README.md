@@ -17,7 +17,7 @@ conda install -c rodri90y gdio
 
 if you are using pip install, before install manually the requirements
 
-conda create -n envname python=3.9 --file requirements/base.txt
+conda create -n envname python=3.11 --file requirements/base.txt
 pip install gdio
 or
 pip install --index-url https://test.pypi.org/simple/ --upgrade --no-cache-dir --extra-index-url=https://pypi.org/simple/ gdio
@@ -833,7 +833,7 @@ https://github.com/rodri90y/gdio
 
 ## Contributing
 
-* 0.3.6
+* 0.3.7
     * alpha release
     
 

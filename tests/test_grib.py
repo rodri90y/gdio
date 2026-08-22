@@ -20,7 +20,7 @@ class TestGribFiles(unittest.TestCase):
         tmp_grib = os.path.join(self.tmpdir.name, 'tmp.grib')
 
         gr = grib(verbose=False)
-        self.gbr = gr.gb_load(os.path.join(root, 'data/era5_20191226-27_lev.grib'),
+        self.gbr = gr.gb_load(os.path.join(root, 'data/era5_2membros_sintetico.grib'),
                               cut_domain=(-30, 300, 10, 320),
                               cut_time=(1, 2),
                               rename_vars={'t': '2t'})
@@ -32,20 +32,23 @@ class TestGribFiles(unittest.TestCase):
 
         # open new new grib
         self.new_gbr = gr.gb_load(tmp_grib,
-                               rename_vars={'t': '2t'})
+                               rename_vars={'t': '2t'}
+                                  )
+
 
 
 
 
     def setUp(self):
 
-        self.expected_dim = (1, 2, 7, 161, 81)
+        self.expected_dim = (2, 2, 7, 161, 81)
         self.expected_variables = sorted(['ref_time', 'time_units', 'time', 'r', '2t', 'u', 'v'])
         self.expected_level_type = ['isobaricInhPa']
         self.expected_units = 'm s**-1'
         self.expected_times = [12, 24]
         self.expected_coordinate = ([26], [53])
         self.expected_levels = [200, 300, 500, 700, 800, 950, 1000]
+        self.expected_members = [0, 1]
 
     def test_open_grib(self):
 
@@ -87,6 +90,7 @@ class TestGribFiles(unittest.TestCase):
 
 
     def test_write_data(self):
+        # print(self.gbr.get('u').isobaricInhPa.value.shape)
         np.testing.assert_almost_equal(self.gbr.get('u').isobaricInhPa.value,
                                        self.new_gbr.get('u').isobaricInhPa.value,
                                        decimal=3)
@@ -103,6 +107,10 @@ class TestGribFiles(unittest.TestCase):
     def test_write_variables(self):
         self.assertEqual(sorted(self.new_gbr.keys()), self.expected_variables,
                          'incorrect number of variables')
+
+    def test_write_members(self):
+        self.assertEqual(sorted(self.new_gbr.get('u').isobaricInhPa.members), self.expected_members,
+                         'incorrect number of members')
 
 
 
