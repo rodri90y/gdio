@@ -1,6 +1,6 @@
 package:
   name: gdio
-  version: 0.3.7
+  version: 0.3.8
 
 source:
   path: .
@@ -11,20 +11,20 @@ build:
 
 requirements:
   build:
-    - {{ compiler('c') }}      # Necessário se houver extensões C
+    - {{ compiler('c') }}
+
   host:
-    - python
-    - python >=3.9
+    - python                   # Removido o >=3.9 para ativar a matriz do conda-build!
     - pip
     - setuptools
     - hdf5
     - netcdf4
     - h5py
     - eccodes
+
   run:
-    - python
-    - python >=3.9
-    - hdf5                     # Garante que a lib de sistema seja instalada
+    - python                   # Deixe apenas "python" aqui! O conda-build injeta o vínculo correto
+    - hdf5
     - netcdf4 >=1.5.8
     - h5py >=3.6.0
     - eccodes >=2.25.0

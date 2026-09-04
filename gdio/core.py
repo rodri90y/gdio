@@ -28,9 +28,11 @@ class gdio(object):
 
     def __init__(self,
                  verbose=False,
+                 debug=False,
                  remap_n_processes=2):
 
         self.verbose = verbose
+        self.debug = debug
         self.remap_n_processes = remap_n_processes
         self.dataset = list()
 
@@ -101,7 +103,7 @@ class gdio(object):
 
             _data = None
 
-            gb = gblib(verbose=self.verbose)
+            gb = gblib(verbose=self.verbose, debug=self.debug)
             gb.fields_ensemble = self.fields_ensemble
             gb.fields_ensemble_exception = self.fields_ensemble_exception
 

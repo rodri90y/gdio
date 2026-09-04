@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2025.Set"
+__date__ = "2026.Ago"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.6"
+__version__ = "version 0.3.7"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -19,9 +19,10 @@ from gdio.commons import near_yx2, objectify, parse_time_units
 
 class netcdf(object):
 
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, debug=False):
 
         self.verbose = verbose
+        self.debug = debug
 
         self.coordinates = list()
         self.variables = list()

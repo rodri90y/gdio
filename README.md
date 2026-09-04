@@ -179,8 +179,7 @@ rename the original variable name (key) to a new name (value).
 Eg. {'tmpmdl': 't', 'tmpprs': 't'}
 
 **sort_before:         bool**\
-Sort fields before process validityDate, validityTime, paramId, typeOfLevel, perturbationNumber and level. Warning high
-consumption of memory, just use when the grib data structure is not standard
+Deprecated
 
 
 ### Selecting a sub sample in mload dataset
@@ -833,7 +832,7 @@ https://github.com/rodri90y/gdio
 
 ## Contributing
 
-* 0.3.7
+* 0.3.8
     * alpha release
     
 
