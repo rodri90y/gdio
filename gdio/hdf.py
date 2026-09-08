@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2026.Ago"
+__date__ = "2026.Set"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.0.4"
+__version__ = "version 0.0.5"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -39,7 +39,7 @@ class hdf(object):
                                     'XLONG_M'
                                     ]
         self.__fields_time = ['time']
-        self.__fields_members = ['member']
+        self.__fields_members = ['ensemble', 'member', 'perturbationNumber']
         self.__fields_level = {
             'isobaricInhPa': ['level', 'levels', 'lev', 'presmdl'],
             'hybrid': ['mdllevel', 'level_hybrid'],
@@ -182,9 +182,13 @@ class hdf(object):
                         self.lat = np.flip(self.lat, axis=0)
 
                 elif key.lower() in sum(self.__fields_level.values(), []):
+                    self.coordinates.append('level')
                     typeLev = [k for k, v in self.__fields_level.items() if key in v][0]
                     self.levels['surface'] = [0]
                     self.levels[typeLev] = list(val[:].astype(int))
+
+                elif key in self.__fields_members:
+                    self.coordinates.append('ensemble')
 
 
             # cut time ..............................
@@ -280,7 +284,10 @@ class hdf(object):
                                 else:
                                     _data = _data[None, None, :, :, :]
                             elif _data.ndim == 4:
-                                _data = _data[None, :, :, :, :]
+                                if any(item in self.coordinates for item in self.__fields_members):
+                                    _data = _data[:, :, None, :, :]
+                                else:
+                                    _data = _data[None, :, :, :, :]
 
                             # axis translation (lon,lat > lat,lon)
                             __coord = self.get_attr(val, 'coordinates', '').split()

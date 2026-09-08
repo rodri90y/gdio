@@ -110,8 +110,12 @@ class objectify(dict):
     #sort following the order of the key list
     def sort(self, keys):
         __data = self.copy()
+
         for key in reversed(keys):
-            __data = {key: __data.pop(key), **__data}
+            try:
+                __data = {key: __data.pop(key), **__data}
+            except:
+                pass
         return __data
 
     def update(self, *args, **kwargs):

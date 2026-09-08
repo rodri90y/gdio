@@ -16,6 +16,9 @@ export PYTHON=$(which python)
 conda build . (in the project root dir)
 conda build name_project
 conda build --override-channels -c conda-forge --python 3.11 .
+
+compile for all python configurated
+conda-build . -m conda_build_config.yaml
 ```
 em caso de erro:
 ```

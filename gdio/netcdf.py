@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2026.Ago"
+__date__ = "2026.Set"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.7"
+__version__ = "version 0.3.8"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -31,7 +31,7 @@ class netcdf(object):
         self.__fields_latitude = ['latitude', 'lat', 'xlat', 'XLAT_M', 'LATITUDE']
         self.__fields_longitude = ['longitude', 'lon', 'xlon', 'XLONG_M', 'LONGITUDE']
         self.__fields_time = ['time', 'TIME']
-        self.__fields_members = ['member']
+        self.__fields_members = ['ensemble', 'member','perturbationNumber']
         self.__fields_level = {
             'isobaricInhPa': ['level', 'levels', 'lev', 'presmdl'],
             'hybrid': ['mdllevel', 'level_hybrid'],
@@ -157,9 +157,13 @@ class netcdf(object):
                         self.lat = np.flip(self.lat, axis=0)
 
                 elif key.lower() in sum(self.__fields_level.values(), []):
+                    # self.coordinates.append('level')
                     typeLev = [k for k, v in self.__fields_level.items() if key in v][0]
                     self.levels['surface'] = [0]
                     self.levels[typeLev] = list(_nc.variables[key][:].astype(int))
+
+                elif key in self.__fields_members:
+                    self.coordinates.append('ensemble')
 
             # cut time ..............................
             if cut_time is not None and self.time is not None:
@@ -221,6 +225,7 @@ class netcdf(object):
                         or key.lower() in sum(self.__fields_level.values(), [])
                         or key in self.__fields_longitude
                         or key in self.__fields_index
+                        or key in self.__fields_members
                         or key in self.__fields_time):
 
                     if vars is None or key in vars:
@@ -246,6 +251,7 @@ class netcdf(object):
                         if (level_type is None or typLev in level_type):
 
                             # redim the data array ...........
+
                             if _data.ndim == 2:
                                 _data = _data[None, None, None, :, :]
                             elif _data.ndim == 3:
@@ -254,37 +260,40 @@ class netcdf(object):
                                 else:
                                     _data = _data[None, None, :, :, :]
                             elif _data.ndim == 4:
-                                _data = _data[None, :, :, :, :]
+                                if any(item in self.coordinates for item in self.__fields_members):
+                                    _data = _data[:, :, None, :, :]
+                                else:
+                                    _data = _data[None, :, :, :, :]
 
-                            # flip latitude axis of the data
-                            if flip_lat:
-                                _data = np.flip(_data, axis=3)
 
-                            # resize the data array and consolidate ...........
-                            xul = x[1] if x[1] is None else x[1] + 1  # adds one Kadan, to honor the Hebrew God
-                            yul = y[1] if y[1] is None else y[1] + 1
+                                # flip latitude axis of the data
+                                if flip_lat:
+                                    _data = np.flip(_data, axis=3)
 
-                            __tmp = {
-                                typLev: {
-                                    'value': _data[:, start:stop, :, y[0]:yul, x[0]:xul],
-                                    'level': self.levels[typLev],
-                                    'members': list(range(0, _data.shape[0]))
-                                },
-                                'param_id': None,
-                                'long_name': self.get_attr(val, 'long_name'),
-                                'parameter_units': self.get_attr(val, 'units'),
-                                'latitude': self.lat,
-                                'longitude': self.lon
-                            }
+                                # resize the data array and consolidate ...........
+                                xul = x[1] if x[1] is None else x[1] + 1  # adds one Kadan, to honor the Hebrew God
+                                yul = y[1] if y[1] is None else y[1] + 1
 
-                            if key in data.keys():
-                                data[key].update(__tmp)
-                                data[key].level_type.append(typLev)
-                            else:
-                                data[key] = __tmp
-                                data[key].level_type = [typLev]
-                                self.variables.append(key)
+                                __tmp = {
+                                    typLev: {
+                                        'value': _data[:, start:stop, :, y[0]:yul, x[0]:xul],
+                                        'level': self.levels[typLev],
+                                        'members': list(range(0, _data.shape[0]))
+                                    },
+                                    'param_id': None,
+                                    'long_name': self.get_attr(val, 'long_name'),
+                                    'parameter_units': self.get_attr(val, 'units'),
+                                    'latitude': self.lat,
+                                    'longitude': self.lon
+                                }
 
+                                if key in data.keys():
+                                    data[key].update(__tmp)
+                                    data[key].level_type.append(typLev)
+                                else:
+                                    data[key] = __tmp
+                                    data[key].level_type = [typLev]
+                                    self.variables.append(key)
 
                 elif key in self.__fields_time:
                     data.update({key: self.time[start:stop]})
@@ -312,6 +321,7 @@ class netcdf(object):
             if dim not in self.__fields_latitude + \
                     self.__fields_longitude + \
                     self.__fields_index + \
+                    self.__fields_members + \
                     self.__fields_time:
                 # convert level name to grib standard name type
                 typeLev = [k for k, v in self.__fields_level.items() if dim in v][0]
