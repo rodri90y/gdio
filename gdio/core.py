@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2026.Ago"
+__date__ = "2026.Set"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.7"
+__version__ = "version 0.3.9"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -436,6 +436,7 @@ class gdio(object):
                         y, x = near_yx2({'latitude': _dat[k].latitude, 'longitude': _dat[k].longitude},
                                         lats=latitude, lons=longitude)
 
+
                     for typLev in v.level_type:
 
                         # cut data in longitude dimension
@@ -447,6 +448,12 @@ class gdio(object):
                             else:
                                 _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, :, x]
 
+                            # longitude coordinate
+                            if len(x) == 2:
+                                _dat[k].longitude = _dat[k].longitude[y[0]:y[1], x[0]:x[1]]
+                            else:
+                                _dat[k].longitude = _dat[k].longitude[y, x]
+
                         # cut data in latitude dimension
                         if y:
                             if len(y) == 2:
@@ -455,6 +462,12 @@ class gdio(object):
                                 _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, y[0]]
                             else:
                                 _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, y]
+
+                            # latitude coordinate
+                            if len(y) == 2:
+                                _dat[k].latitude = _dat[k].latitude[y[0]:y[1], x[0]:x[1]]
+                            else:
+                                _dat[k].latitude = _dat[k].latitude[y, x]
 
                         # cut data in levels dimension
                         if z:
@@ -479,28 +492,9 @@ class gdio(object):
 
                 # select cordinates attributes
                 else:
-
-                    if k in ['latitude']:  # latitude coordinate
-
-                        if y:
-                            if len(y) == 2:
-                                _dat[k] = _dat[k][y[0]:y[1], x[0]:x[1]]
-                            else:
-                                _dat[k] = _dat[k][y, x]
-
-                    elif k in ['longitude']:  # longitude coordinate
-
-                        if x:
-                            if len(x) == 2:
-                                _dat[k] = _dat[k][y[0]:y[1], x[0]:x[1]]
-                            else:
-                                _dat[k] = _dat[k][y, x]
-
-                    elif k in ['time']:  # time coordinate
-
+                    if k in ['time']:  # time coordinate
                         if dates:
                             _dat[k] = _dat[k][t]
-
                     else:
                         _dat.update({k: v})
 
