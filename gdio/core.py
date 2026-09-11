@@ -3,7 +3,7 @@ __date__ = "2026.Set"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.9"
+__version__ = "version 0.4.0"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
@@ -213,7 +213,6 @@ class gdio(object):
                     files)
 
         for _dat in loaded_files:
-
             if vars is not None:
                 vars = [rename_vars.get(n, n) for n in vars]
 
@@ -701,6 +700,7 @@ class gdio(object):
         for key, val in data.items():
             if (var is None or key == var[0]) \
                     and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:    # var[0] limit the first variable dimension
+
                 return val.longitude, val.latitude
 
 

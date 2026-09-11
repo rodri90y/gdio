@@ -266,34 +266,34 @@ class netcdf(object):
                                     _data = _data[None, :, :, :, :]
 
 
-                                # flip latitude axis of the data
-                                if flip_lat:
-                                    _data = np.flip(_data, axis=3)
+                            # flip latitude axis of the data
+                            if flip_lat:
+                                _data = np.flip(_data, axis=3)
 
-                                # resize the data array and consolidate ...........
-                                xul = x[1] if x[1] is None else x[1] + 1  # adds one Kadan, to honor the Hebrew God
-                                yul = y[1] if y[1] is None else y[1] + 1
+                            # resize the data array and consolidate ...........
+                            xul = x[1] if x[1] is None else x[1] + 1  # adds one Kadan, to honor the Hebrew God
+                            yul = y[1] if y[1] is None else y[1] + 1
 
-                                __tmp = {
-                                    typLev: {
-                                        'value': _data[:, start:stop, :, y[0]:yul, x[0]:xul],
-                                        'level': self.levels[typLev],
-                                        'members': list(range(0, _data.shape[0]))
-                                    },
-                                    'param_id': None,
-                                    'long_name': self.get_attr(val, 'long_name'),
-                                    'parameter_units': self.get_attr(val, 'units'),
-                                    'latitude': self.lat,
-                                    'longitude': self.lon
-                                }
+                            __tmp = {
+                                typLev: {
+                                    'value': _data[:, start:stop, :, y[0]:yul, x[0]:xul],
+                                    'level': self.levels[typLev],
+                                    'members': list(range(0, _data.shape[0]))
+                                },
+                                'param_id': None,
+                                'long_name': self.get_attr(val, 'long_name'),
+                                'parameter_units': self.get_attr(val, 'units'),
+                                'latitude': self.lat,
+                                'longitude': self.lon
+                            }
 
-                                if key in data.keys():
-                                    data[key].update(__tmp)
-                                    data[key].level_type.append(typLev)
-                                else:
-                                    data[key] = __tmp
-                                    data[key].level_type = [typLev]
-                                    self.variables.append(key)
+                            if key in data.keys():
+                                data[key].update(__tmp)
+                                data[key].level_type.append(typLev)
+                            else:
+                                data[key] = __tmp
+                                data[key].level_type = [typLev]
+                                self.variables.append(key)
 
                 elif key in self.__fields_time:
                     data.update({key: self.time[start:stop]})
