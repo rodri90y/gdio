@@ -1,11 +1,11 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2026.Set"
+__date__ = "2026.Out"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
 __version__ = "version 0.4.0"
 __license__ = "MIT"
-__status__ = "development"
+__status__ = "development last L"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
 
 import copy
@@ -42,7 +42,7 @@ class gdio(object):
         self.__fields_latitude = ['latitude', 'lat', 'xlat', 'LATITUDE']
         self.__fields_longitude = ['longitude', 'lon', 'xlon', 'LONGITUDE']
         self.__fields_time = ['time', 'TIME']
-        self.__fields_level = ['level', 'lev', 'LEVEL', 'levels', 'LEVELS']
+        self.__fields_level = ['level', 'lev', 'plev', 'LEVEL', 'levels', 'LEVELS']
         self.fields_ensemble = 'perturbationNumber'
         self.fields_ensemble_exception = [0]
 

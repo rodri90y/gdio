@@ -3,7 +3,7 @@ __date__ = "2026.Set"
 __credits__ = ["Rodrigo Yamamoto", "Carlos Oliveira", "Igor"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.8"
+__version__ = "version 0.3.9"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -27,13 +27,13 @@ class netcdf(object):
         self.coordinates = list()
         self.variables = list()
 
-        self.__fields_index = ['x', 'y', 'ix', 'iy']
+        self.__fields_index = ['x', 'y', 'ix', 'iy', 'bnds']
         self.__fields_latitude = ['latitude', 'lat', 'xlat', 'XLAT_M', 'LATITUDE']
         self.__fields_longitude = ['longitude', 'lon', 'xlon', 'XLONG_M', 'LONGITUDE']
         self.__fields_time = ['time', 'TIME']
         self.__fields_members = ['ensemble', 'member','perturbationNumber']
         self.__fields_level = {
-            'isobaricInhPa': ['level', 'levels', 'lev', 'presmdl'],
+            'isobaricInhPa': ['level', 'levels', 'lev', 'plev', 'presmdl'],
             'hybrid': ['mdllevel', 'level_hybrid'],
             'etaLevel': ['eta'],
             'eta': ['eta'],
@@ -244,7 +244,10 @@ class netcdf(object):
                                 key = v
 
                         # if necessary roll longitude due discontinuity 360-0 of the longitude
-                        _data = np.roll(_data, cut_domain_roll, axis=-1)
+                        try:
+                            _data = np.roll(_data, cut_domain_roll, axis=-1)
+                        except BaseException:
+                            continue
 
                         typLev = self.__gettypLev(val)
 
