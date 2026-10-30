@@ -19,11 +19,21 @@ class TestGribFiles(unittest.TestCase):
         self.addClassCleanup(self.tmpdir.cleanup)
         tmp_grib = os.path.join(self.tmpdir.name, 'tmp.grib')
 
+        # open new new grib
         gr = grib(verbose=False)
         self.gbr = gr.gb_load(os.path.join(root, 'data/era5_2membros_sintetico.grib'),
                               cut_domain=(-30, 300, 10, 320),
                               cut_time=(1, 2),
                               rename_vars={'t': '2t'})
+
+        # filtered member
+        self.filtered_gbr = gr.gb_load(os.path.join(root, 'data/era5_2membros_sintetico.grib'),
+                                       cut_domain=(-30, 300, 10, 320),
+                                       cut_time=(1, 2),
+                                       rename_vars={'t': '2t'},
+                                       filter_by={'perturbationNumber': [1]}
+                                       )
+
 
         # write new grib
         gr.gb_write(tmp_grib, self.gbr,
@@ -48,6 +58,8 @@ class TestGribFiles(unittest.TestCase):
         self.expected_times = [12, 24]
         self.expected_coordinate = ([26], [53])
         self.expected_levels = [200, 300, 500, 700, 800, 950, 1000]
+        self.filtered_dim = (1, 2, 7, 161, 81)
+        self.filtered_members = [1]
         self.expected_members = [0, 1]
 
     def test_open_grib(self):
@@ -77,7 +89,6 @@ class TestGribFiles(unittest.TestCase):
                          'units of u variable incorrect')
 
     def test_cut_time(self):
-
         self.assertListEqual(list(self.gbr.get('time')), self.expected_times,
                              'incorrect time cut')
 
@@ -87,6 +98,14 @@ class TestGribFiles(unittest.TestCase):
                                  lats=-23.54, lons=-46.64), self.expected_coordinate,
                          'problem with the spatial dimension')
 
+
+    def test_filtered_dimension(self):
+        self.assertEqual(self.filtered_gbr.get('u').isobaricInhPa.value.shape, self.filtered_dim,
+                         'dimension shape of u variable incorrect')
+
+    def test_filtered_members(self):
+        self.assertEqual(sorted(self.filtered_gbr.get('u').isobaricInhPa.members), self.filtered_members,
+                         'incorrect members')
 
 
     def test_write_data(self):

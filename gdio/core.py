@@ -1,11 +1,11 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2026.Ago"
+__date__ = "2026.Out"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.3.7"
+__version__ = "version 0.4.0"
 __license__ = "MIT"
-__status__ = "development"
+__status__ = "development last L"
 __description__ = "A simple and concise gridded data IO library for read multiples grib and netcdf files"
 
 import copy
@@ -28,9 +28,11 @@ class gdio(object):
 
     def __init__(self,
                  verbose=False,
+                 debug=False,
                  remap_n_processes=2):
 
         self.verbose = verbose
+        self.debug = debug
         self.remap_n_processes = remap_n_processes
         self.dataset = list()
 
@@ -40,7 +42,7 @@ class gdio(object):
         self.__fields_latitude = ['latitude', 'lat', 'xlat', 'LATITUDE']
         self.__fields_longitude = ['longitude', 'lon', 'xlon', 'LONGITUDE']
         self.__fields_time = ['time', 'TIME']
-        self.__fields_level = ['level', 'lev', 'LEVEL', 'levels', 'LEVELS']
+        self.__fields_level = ['level', 'lev', 'plev', 'LEVEL', 'levels', 'LEVELS']
         self.fields_ensemble = 'perturbationNumber'
         self.fields_ensemble_exception = [0]
 
@@ -101,7 +103,7 @@ class gdio(object):
 
             _data = None
 
-            gb = gblib(verbose=self.verbose)
+            gb = gblib(verbose=self.verbose, debug=self.debug)
             gb.fields_ensemble = self.fields_ensemble
             gb.fields_ensemble_exception = self.fields_ensemble_exception
 
@@ -211,7 +213,6 @@ class gdio(object):
                     files)
 
         for _dat in loaded_files:
-
             if vars is not None:
                 vars = [rename_vars.get(n, n) for n in vars]
 
@@ -434,6 +435,7 @@ class gdio(object):
                         y, x = near_yx2({'latitude': _dat[k].latitude, 'longitude': _dat[k].longitude},
                                         lats=latitude, lons=longitude)
 
+
                     for typLev in v.level_type:
 
                         # cut data in longitude dimension
@@ -445,6 +447,12 @@ class gdio(object):
                             else:
                                 _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, :, x]
 
+                            # longitude coordinate
+                            if len(x) == 2:
+                                _dat[k].longitude = _dat[k].longitude[y[0]:y[1], x[0]:x[1]]
+                            else:
+                                _dat[k].longitude = _dat[k].longitude[y, x]
+
                         # cut data in latitude dimension
                         if y:
                             if len(y) == 2:
@@ -453,6 +461,12 @@ class gdio(object):
                                 _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, y[0]]
                             else:
                                 _dat[k][typLev].value = _dat[k][typLev].value[:, :, :, y]
+
+                            # latitude coordinate
+                            if len(y) == 2:
+                                _dat[k].latitude = _dat[k].latitude[y[0]:y[1], x[0]:x[1]]
+                            else:
+                                _dat[k].latitude = _dat[k].latitude[y, x]
 
                         # cut data in levels dimension
                         if z:
@@ -477,28 +491,9 @@ class gdio(object):
 
                 # select cordinates attributes
                 else:
-
-                    if k in ['latitude']:  # latitude coordinate
-
-                        if y:
-                            if len(y) == 2:
-                                _dat[k] = _dat[k][y[0]:y[1], x[0]:x[1]]
-                            else:
-                                _dat[k] = _dat[k][y, x]
-
-                    elif k in ['longitude']:  # longitude coordinate
-
-                        if x:
-                            if len(x) == 2:
-                                _dat[k] = _dat[k][y[0]:y[1], x[0]:x[1]]
-                            else:
-                                _dat[k] = _dat[k][y, x]
-
-                    elif k in ['time']:  # time coordinate
-
+                    if k in ['time']:  # time coordinate
                         if dates:
                             _dat[k] = _dat[k][t]
-
                     else:
                         _dat.update({k: v})
 
@@ -705,6 +700,7 @@ class gdio(object):
         for key, val in data.items():
             if (var is None or key == var[0]) \
                     and not key in ['latitude', 'longitude', 'ref_time', 'time', 'time_units']:    # var[0] limit the first variable dimension
+
                 return val.longitude, val.latitude
 
 

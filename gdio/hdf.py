@@ -1,9 +1,9 @@
 __author__ = "Rodrigo Yamamoto"
-__date__ = "2025.Set"
+__date__ = "2026.Set"
 __credits__ = ["Rodrigo Yamamoto"]
 __maintainer__ = "Rodrigo Yamamoto"
 __email__ = "codes@rodrigoyamamoto.com"
-__version__ = "version 0.0.3"
+__version__ = "version 0.0.6"
 __license__ = "MIT"
 __status__ = "development"
 __description__ = "A netcdf file IO library"
@@ -19,14 +19,15 @@ from gdio.commons import near_yx2, objectify, parse_time_units
 
 class hdf(object):
 
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, debug=False):
 
         self.verbose = verbose
+        self.debug = debug
 
         self.coordinates = list()
         self.variables = list()
 
-        self.__fields_index = ['x', 'y', 'ix', 'iy']
+        self.__fields_index = ['x', 'y', 'ix', 'iy', 'bnds']
         self.__fields_latitude = [
                                     'latitude', 'lat',
                                     'xlat',
@@ -38,9 +39,9 @@ class hdf(object):
                                     'XLONG_M'
                                     ]
         self.__fields_time = ['time']
-        self.__fields_members = ['member']
+        self.__fields_members = ['ensemble', 'member', 'perturbationNumber']
         self.__fields_level = {
-            'isobaricInhPa': ['level', 'levels', 'lev', 'presmdl'],
+            'isobaricInhPa': ['level', 'levels', 'lev', 'plev', 'presmdl'],
             'hybrid': ['mdllevel', 'level_hybrid'],
             'etaLevel': ['eta'],
             'eta': ['eta'],
@@ -181,9 +182,13 @@ class hdf(object):
                         self.lat = np.flip(self.lat, axis=0)
 
                 elif key.lower() in sum(self.__fields_level.values(), []):
+                    self.coordinates.append('level')
                     typeLev = [k for k, v in self.__fields_level.items() if key in v][0]
                     self.levels['surface'] = [0]
                     self.levels[typeLev] = list(val[:].astype(int))
+
+                elif key in self.__fields_members:
+                    self.coordinates.append('ensemble')
 
 
             # cut time ..............................
@@ -262,7 +267,10 @@ class hdf(object):
                                 key = v
 
                         # if necessary roll longitude due discontinuity 360-0 of the longitude
-                        _data = np.roll(_data, cut_domain_roll, axis=-1)
+                        try:
+                            _data = np.roll(_data, cut_domain_roll, axis=-1)
+                        except BaseException:
+                            continue
 
                         typLev = self.__gettypLev(val)
 
@@ -279,7 +287,10 @@ class hdf(object):
                                 else:
                                     _data = _data[None, None, :, :, :]
                             elif _data.ndim == 4:
-                                _data = _data[None, :, :, :, :]
+                                if any(item in self.coordinates for item in self.__fields_members):
+                                    _data = _data[:, :, None, :, :]
+                                else:
+                                    _data = _data[None, :, :, :, :]
 
                             # axis translation (lon,lat > lat,lon)
                             __coord = self.get_attr(val, 'coordinates', '').split()

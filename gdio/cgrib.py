@@ -48,7 +48,6 @@ class cgrib():
 
         # value set
         self.values = codes_get_values(gid)
-        self.msg = codes_get_message(gid)
 
         # change the flatten data array to actual data dimension
         if isinstance(self.values, np.ndarray):
